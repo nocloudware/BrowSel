@@ -1,9 +1,9 @@
-BrowSel usa los siguientes componentes de terceros:
+BrowSel uses the following third-party components:
 
 - Microsoft.WindowsAppSDK 1.8.251106002 - https://github.com/microsoft/WindowsAppSDK/blob/main/LICENSE
 - Microsoft.Windows.SDK.BuildTools 10.0.26100.7175 - https://github.com/microsoft/WindowsAppSDK-Samples/blob/main/LICENSE
 - System.Management 8.0.0 - https://github.com/dotnet/runtime/blob/main/LICENSE.TXT
 
-Windows App SDK se distribuye bajo la licencia MIT.
-Los componentes nativos de Windows (Windows SDK) son propiedad de
-Microsoft Corporation y se distribuyen bajo los terminos de Windows SDK.
+Windows App SDK is distributed under the MIT license.
+The native Windows components (Windows SDK) are property of Microsoft
+Corporation and are distributed under the Windows SDK terms.

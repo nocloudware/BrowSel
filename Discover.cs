@@ -7,12 +7,12 @@ using System.Text.RegularExpressions;
 using Microsoft.Win32;
 
 enum Kind { Chromium, Firefox }
-// Data = ruta de "Local State" (Chromium) o de "profiles.ini" (Firefox)
+// Data = path to "Local State" (Chromium) or to "profiles.ini" (Firefox)
 record Browser(string Name, string Product, Kind Kind, string ExeName, string[] ExePaths, string Data);
 record Proc(string Name, uint Pid, string Cmd);
 record Entry(Browser B, string Exe, string Dir, string Label, bool Open, string Why);
 
-// Descubrimiento de navegadores, deteccion de perfiles abiertos y lanzamiento.
+// Browser discovery, open-profile detection and launching.
 static class Discover
 {
     static readonly string Local = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
@@ -38,7 +38,7 @@ static class Discover
             Path.Combine(Roaming, @"Mozilla\Firefox\profiles.ini")),
     };
 
-    // Una sola consulta WMI para todos los navegadores, compartida por todo el selector
+    // One single WMI query for every browser, shared by the whole picker
     static List<Proc>? _snap;
     static List<Proc> Snapshot()
     {
@@ -53,7 +53,7 @@ static class Discover
 
     public static string? FindExe(Browser b)
     {
-        // Rutas de instalacion conocidas primero; el registro solo como respaldo (instalaciones en otra ruta)
+        // Known install paths first; the registry only as a fallback (installs elsewhere)
         var known = b.ExePaths.FirstOrDefault(File.Exists);
         if (known != null) return known;
         foreach (var hive in new[] { "HKEY_LOCAL_MACHINE", "HKEY_CURRENT_USER" })
@@ -75,9 +75,9 @@ static class Discover
         if (!doc.RootElement.TryGetProperty("profile", out var profile) ||
             !profile.TryGetProperty("info_cache", out var cache) || cache.ValueKind != JsonValueKind.Object)
         {
-            // Sin lista de perfiles (p. ej. Opera): una sola entrada
+            // No profile list (e.g. Opera): a single entry
             bool run = Snapshot().Any(p => p.Name.Equals(b.ExeName, StringComparison.OrdinalIgnoreCase) && !p.Cmd.Contains("--type="));
-            return new() { new Entry(b, exe, "", $"{b.Name} (perfil unico)", run, run ? "proceso" : "") };
+            return new() { new Entry(b, exe, "", $"{b.Name} (single profile)", run, run ? "process" : "") };
         }
 
         var names = cache.EnumerateObject().ToDictionary(
@@ -104,9 +104,9 @@ static class Discover
             if (!sec.StartsWith("[Profile", StringComparison.OrdinalIgnoreCase)) return;
             if (!cur.TryGetValue("Name", out var name) || !cur.TryGetValue("Path", out var path)) return;
             var full = cur.GetValueOrDefault("IsRelative") == "1" ? Path.Combine(baseDir, path.Replace('/', '\\')) : path;
-            // ponytail: si Firefox cambia como toma el candado parent.lock, esta deteccion deja de ver el perfil abierto.
+            // ponytail: if Firefox changes how parent.lock is taken, this stops seeing the open profile.
             bool open = IsLocked(Path.Combine(full, "parent.lock"));
-            result.Add(new Entry(b, exe, name, $"{name}  (Firefox)", open, open ? "lock" : ""));
+            result.Add(new Entry(b, exe, name, $"{name}  (Firefox)", open, open ? "lock file" : ""));
         }
 
         foreach (var raw in File.ReadAllLines(b.Data))
@@ -120,7 +120,7 @@ static class Discover
         return result;
     }
 
-    // ---------- Deteccion de perfiles abiertos (Chromium) ----------
+    // ---------- Open-profile detection (Chromium) ----------
 
     [DllImport("user32.dll")] static extern bool EnumWindows(EnumProc cb, IntPtr l);
     [DllImport("user32.dll")] static extern bool IsWindowVisible(IntPtr h);
@@ -144,18 +144,18 @@ static class Discover
             if (!l.Contains(why)) l.Add(why);
         }
 
-        // 1: linea de comandos de procesos principales (snapshot compartido)
+        // 1: command line of the main processes (shared snapshot)
         var mainPids = new HashSet<uint>();
         foreach (var p in Snapshot())
         {
             if (!p.Name.Equals(Path.GetFileName(exe), StringComparison.OrdinalIgnoreCase) || p.Cmd.Contains("--type=")) continue;
             mainPids.Add(p.Pid);
             var m = Regex.Match(p.Cmd, "--profile-directory=(?:\"([^\"]+)\"|(\\S+))");
-            if (m.Success) Add(m.Groups[1].Success ? m.Groups[1].Value : m.Groups[2].Value, "cmdline");
+            if (m.Success) Add(m.Groups[1].Success ? m.Groups[1].Value : m.Groups[2].Value, "command line");
         }
-        if (mainPids.Count == 0) return res; // navegador cerrado
+        if (mainPids.Count == 0) return res; // browser closed
 
-        // 2: titulos de ventana "... - Producto - Perfil" o "... - Perfil - Producto"
+        // 2: window titles "... - Product - Profile" or "... - Profile - Product"
         EnumWindows((h, _) =>
         {
             if (!IsWindowVisible(h)) return true;
@@ -168,19 +168,19 @@ static class Discover
             foreach (var kv in names)
                 if (title.EndsWith($" - {b.Product} - {kv.Value}", StringComparison.OrdinalIgnoreCase) ||
                     title.EndsWith($" - {kv.Value} - {b.Product}", StringComparison.OrdinalIgnoreCase))
-                    Add(kv.Key, "ventana");
+                    Add(kv.Key, "window");
             return true;
         }, IntPtr.Zero);
 
-        // 3: archivos bloqueados por el navegador
+        // 3: files the browser has locked
         var root = Path.GetDirectoryName(b.Data)!;
         foreach (var dir in names.Keys)
             foreach (var probe in LockProbes)
-                if (IsLocked(Path.Combine(root, dir, probe))) { Add(dir, "lock"); break; }
+                if (IsLocked(Path.Combine(root, dir, probe))) { Add(dir, "lock file"); break; }
 
-        // 4 (solo respaldo): last_active_profiles, unicamente si ninguna otra senal detecto nada
+        // 4 (fallback only): last_active_profiles, only if no other signal found anything
         if (res.Count == 0 && profile.TryGetProperty("last_active_profiles", out var last))
-            foreach (var x in last.EnumerateArray()) Add(x.GetString()!, "last_active");
+            foreach (var x in last.EnumerateArray()) Add(x.GetString()!, "last active");
 
         return res;
     }
@@ -199,7 +199,7 @@ static class Discover
         if (e.B.Kind == Kind.Firefox)
         {
             psi.ArgumentList.Add("-P"); psi.ArgumentList.Add(e.Dir);
-            // Perfil ya abierto: reutiliza su instancia. Cerrado: instancia nueva sin choque con otros perfiles.
+            // Profile already open: reuse its instance. Closed: a new instance, no clash with other profiles.
             psi.ArgumentList.Add(e.Open ? "-new-tab" : "-no-remote");
             psi.ArgumentList.Add(url);
         }

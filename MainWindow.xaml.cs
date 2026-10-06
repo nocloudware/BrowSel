@@ -23,7 +23,7 @@ public sealed partial class MainWindow : Window
     {
         InitializeComponent();
 
-        // Fondo translucido, al estilo de las apps nativas de Windows 11
+        // Translucent backdrop, like the native Windows 11 apps
         SystemBackdrop = new MicaBackdrop();
         ExtendsContentIntoTitleBar = true;
         SetTitleBar(titleBar);
@@ -33,7 +33,7 @@ public sealed partial class MainWindow : Window
 
         Closed += (_, _) => Save();
         root.KeyDown += (_, e) => { if (e.Key == Windows.System.VirtualKey.Escape) Close(); };
-        // El HWND recien existe despues de Activate: por eso el tamano se ajusta en el primer arranque real.
+        // The HWND only exists after Activate: that is why the size is set on the first real launch.
         Activated += First;
     }
 
@@ -46,7 +46,7 @@ public sealed partial class MainWindow : Window
         const int w = 560, h = 640;
         app.MoveAndResize(new RectInt32((area.Width - w) / 2, (area.Height - h) / 2, w, h));
 
-        // deja libre el ancho de los botones de la ventana (cerrar/minimizar) para que el engranaje no quede debajo
+        // leaves room for the window buttons (close/minimize) so the gear does not sit underneath them
         root.Loaded += (_, _) =>
             titleBar.Padding = new Thickness(16, 0, (app.TitleBar.RightInset / root.XamlRoot.RasterizationScale) + 4, 0);
     }
@@ -57,7 +57,7 @@ public sealed partial class MainWindow : Window
         foreach (var b in Discover.Browsers.Where(b => _cfg.Browsers.Contains(b.Name)))
         {
             List<Entry> list;
-            try { list = Discover.Load(b); } catch { list = new(); } // un navegador roto no tumba el selector
+            try { list = Discover.Load(b); } catch { list = new(); } // one broken browser must not take the picker down
 
             var row = new Row { Name = b.Name, Expanded = _cfg.Expanded.Contains(b.Name) };
         foreach (var e in list.OrderBy(x => x.Label))
@@ -87,13 +87,13 @@ public sealed partial class MainWindow : Window
         ? new SolidColorBrush(Color.FromArgb(0x8A, 0xFF, 0xFF, 0xFF))
         : new SolidColorBrush(Color.FromArgb(0x8A, 0x00, 0x00, 0x00));
 
-    // WinUI 3 no dibuja el Content de un TreeViewNode: la lista se arma plana y el colapso se maneja
-    // a mano, que ademas ya hace falta para persistirlo. Cada fila dibuja controles NUEVOS en cada
-    // refresco: reciclar los mismos al reemplazar la ItemsSource rompe el motor XAML de forma nativa.
+    // WinUI 3 does not draw a TreeViewNode Content: the list is built flat and the collapse is handled
+    // by hand, which we need anyway to persist it. Every row builds NEW controls on each
+    // refresh: recycling the same ones while replacing the ItemsSource breaks the XAML engine natively.
     void Reflow()
     {
-        // Cada fila se envuelve en un objeto NUEVO: si se reutiliza el mismo Row, x:Bind no vuelve a
-        // leer View y la vista queda con lo que se dibujo la primera vez (iconos viejos, chevron viejo).
+        // Every row is wrapped in a NEW object: if the same Row is reused, x:Bind does not read
+        // View again and the view keeps whatever was drawn the first time (old icons, old chevron).
         var vis = new List<Item>();
         void Walk(List<Row> rs)
         {
@@ -107,7 +107,7 @@ public sealed partial class MainWindow : Window
         tree.ItemsSource = vis;
     }
 
-    // Cabecera del navegador: chevron, icono y nombre.
+    // Browser header: chevron, icon and name.
     UIElement HeadView(Row r)
     {
         var chev = new FontIcon
@@ -117,7 +117,7 @@ public sealed partial class MainWindow : Window
             VerticalAlignment = VerticalAlignment.Center,
             Visibility = r.Kids.Count > 0 ? Visibility.Visible : Visibility.Collapsed,
         };
-        // Icono real del navegador; si Windows no lo puede sacar, queda el glifo de globo.
+        // Real browser icon; if Windows cannot extract one, the globe glyph stays.
         var glyph = new FontIcon { Glyph = "\uE774", FontSize = 14, VerticalAlignment = VerticalAlignment.Center };
         var img = new Image { Width = 18, Height = 18, Stretch = Stretch.Uniform };
         if (_icons.TryGetValue(r.Name!, out var src)) { img.Source = src; glyph.Visibility = Visibility.Collapsed; }
@@ -137,7 +137,7 @@ public sealed partial class MainWindow : Window
 
     static UIElement LeafView(Entry e)
     {
-        // Punto de estado dibujado, no un caracter de fuente: asi se ve igual en cualquier tema.
+        // Status dot drawn, not a font character: it looks the same in any theme.
         var dot = new Border
         {
             Width = 8,
@@ -152,11 +152,11 @@ public sealed partial class MainWindow : Window
         Grid.SetColumn(txt, 1);
         leaf.Children.Add(dot);
         leaf.Children.Add(txt);
-        if (e.Open) ToolTipService.SetToolTip(leaf, "Detectado por: " + e.Why);
+        if (e.Open) ToolTipService.SetToolTip(leaf, "Detected by: " + e.Why);
         return leaf;
     }
 
-    // Los iconos se leen del disco: se cargan despues de mostrar la ventana para no retrasarla.
+    // Icons are read from disk: loaded after the window is shown so they do not delay it.
     async Task LoadIcons()
     {
         foreach (var b in Discover.Browsers)
@@ -171,12 +171,12 @@ public sealed partial class MainWindow : Window
                 await bmp.SetSourceAsync(th);
                 _icons[b.Name] = bmp;
             }
-            catch { /* sin icono: se queda el glifo. Un navegador roto no puede cortar el resto. */ }
+            catch { /* no icon: the glyph stays. One broken browser cannot cut the rest. */ }
         }
         Reflow(); // repinta ahora que ya hay iconos
     }
 
-    // Un clic en la fila del navegador abre o colapsa; un clic en un perfil abre el enlace.
+    // A click on a browser row opens or collapses it; a click on a profile opens the link.
     void OnSelectionChanged(TreeView sender, TreeViewSelectionChangedEventArgs e)
     {
         if (e.AddedItems.Count == 0 || e.AddedItems[0] is not Item it) return;
@@ -189,8 +189,8 @@ public sealed partial class MainWindow : Window
         }
         if (r.Kids.Count == 0) return;
         r.Expanded = !r.Expanded;
-        // El motor XAML se rompe nativo (no es una excepcion que se pueda capturar) si se reemplaza la
-        // lista del TreeView desde dentro de SelectionChanged. Se difiere a despues del evento.
+        // The XAML engine breaks natively (not a catchable exception) if you replace the
+        // TreeView list from inside SelectionChanged. Deferred until after the event.
         DispatcherQueue.TryEnqueue(Reflow);
     }
 
@@ -200,25 +200,25 @@ public sealed partial class MainWindow : Window
         foreach (var b in Discover.Browsers)
             checks.Children.Add(new CheckBox { Content = b.Name, IsChecked = _cfg.Browsers.Contains(b.Name) });
 
-        if (await dlgSettings.ShowAsync() != ContentDialogResult.Primary) return; // cancelar no toca nada
+        if (await dlgSettings.ShowAsync() != ContentDialogResult.Primary) return; // cancel changes nothing
 
         var keep = checks.Children.OfType<CheckBox>()
             .Where(c => c.IsChecked == true).Select(c => (string)c.Content).ToArray();
         if (keep.Length == 0)
         {
-            Program.Msg("Deja al menos un navegador.");
+            Program.Msg("Leave at least one browser selected.");
             return;
         }
         (_cfg = _cfg with { Browsers = keep }).Save();
-        Program.Msg("Guardado. Se aplica la proxima vez que abras un enlace.");
+        Program.Msg("Saved. It takes effect the next time you open a link.");
     }
 
-    // Rama abierta/cerrada + navegadores marcados quedan para la proxima
+    // Expanded branches and ticked browsers are remembered for the next
     void Save() =>
         (_cfg with { Expanded = _rows.Where(r => r.Expanded).Select(r => r.Name!).ToArray() }).Save();
 }
 
-// Estado de una fila del arbol. Entry presente = hoja (perfil).
+// State of a tree row. Entry present = leaf (profile).
 sealed class Row
 {
     public string? Name { get; set; }
@@ -227,8 +227,8 @@ sealed class Row
     public bool Expanded { get; set; }
 }
 
-// Lo que se dibuja en un renglon del TreeView. Se crea de cero en cada refresco para que el
-// enlace de datos vuelva a evaluarse.
+// What gets drawn in a TreeView row. Rebuilt from scratch on every refresh so the
+// data binding gets evaluated again.
 sealed class Item
 {
     public Row Row { get; set; } = null!;

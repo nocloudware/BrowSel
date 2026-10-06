@@ -7,7 +7,7 @@ public partial class App : Application
     public App()
     {
         InitializeComponent();
-        // Antes un fallo cerraba la app sin decir nada: el usuario solo veia la ventana desaparecer.
+        // A crash used to close the app silently: the user only saw the window disappear.
         UnhandledException += (_, e) => { e.Handled = true; Program.Error(e.Exception); };
     }
 

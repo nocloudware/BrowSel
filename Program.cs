@@ -15,7 +15,7 @@ static class Program
 
     internal static void Error(Exception? ex) =>
         MessageBoxW(IntPtr.Zero,
-            "BrowSel se cerro por un error inesperado.\n\n" + (ex?.ToString() ?? "sin detalle"),
+            "BrowSel closed because of an unexpected error.\n\n" + (ex?.ToString() ?? "no details available"),
             "BrowSel", MbIconError);
 
     [STAThread]
@@ -23,19 +23,20 @@ static class Program
     {
         if (args.Length == 0)
         {
-            Msg("Ejecuta: BrowSel.exe --register (o --unregister para quitarlo)\nLuego elige 'BrowSel' como navegador predeterminado.");
+            Msg("Run: BrowSel.exe --register (or --unregister to remove it)\n"
+                + "Then pick 'BrowSel' as your default browser.");
             return;
         }
         if (args[0] == "--register") { Register(); return; }
         if (args[0] == "--unregister") { Unregister(); return; }
 
-        // Windows puede pasar la URI completa ("BrowSelURL:https://...") o solo la URL
+        // Windows may pass the whole URI ("BrowSelURL:https://...") or just the URL
         var url = args[0];
         var colon = url.IndexOf(':');
         if (colon >= 0 && !url.StartsWith("http", StringComparison.OrdinalIgnoreCase))
             url = url[(colon + 1)..];
 
-        // Solo http/https: evita que un argumento se interprete como opcion del navegador
+        // http/https only: stops an argument from being read as a browser option
         if (!url.StartsWith("http://", StringComparison.OrdinalIgnoreCase) &&
             !url.StartsWith("https://", StringComparison.OrdinalIgnoreCase)) return;
 
@@ -51,7 +52,7 @@ static class Program
 
     internal static string Url = "";
 
-    // ---------- Registro como protocolo / desregistro ----------
+    // ---------- Protocol registration / unregistration ----------
 
     static void Register()
     {
@@ -61,7 +62,7 @@ static class Program
             var apphost = Path.Combine(AppContext.BaseDirectory, "BrowSel.exe");
             if (!File.Exists(apphost))
             {
-                Msg("Compila con 'dotnet build' y ejecuta BrowSel.exe directamente.");
+                Msg("Build with 'dotnet build' and run BrowSel.exe directly.");
                 return;
             }
             exe = apphost;
@@ -78,7 +79,7 @@ static class Program
         using (var k = Registry.CurrentUser.CreateSubKey($@"{app}\Capabilities"))
         {
             k.SetValue("ApplicationName", "BrowSel");
-            k.SetValue("ApplicationDescription", "Selector de perfiles para enlaces");
+            k.SetValue("ApplicationDescription", "Pick the browser and profile for each link");
             using var u = k.CreateSubKey("URLAssociations");
             u.SetValue("http", prog);
             u.SetValue("https", prog);
@@ -87,9 +88,9 @@ static class Program
             k.SetValue("BrowSel", $@"{app}\Capabilities");
 
         Process.Start(new ProcessStartInfo("ms-settings:defaultapps") { UseShellExecute = true })?.Dispose();
-        Msg("BrowSel quedo registrado, pero todavia NO es tu navegador predeterminado. " +
-            "Windows exige confirmarlo a mano: en la ventana de Configuracion que se abrio, " +
-            "busca BrowSel y asignalo a HTTP y HTTPS.");
+        Msg("BrowSel is registered, but it is NOT your default browser yet. "
+            + "Windows requires you to confirm it: in the Settings window that just opened, "
+            + "find BrowSel and set it for HTTP and HTTPS.");
     }
 
     static void Unregister()
@@ -98,7 +99,7 @@ static class Program
         Registry.CurrentUser.DeleteSubKeyTree(@"Software\BrowSel", false);
         using (var k = Registry.CurrentUser.OpenSubKey(@"Software\RegisteredApplications", true))
             k?.DeleteValue("BrowSel", false);
-        Msg("BrowSel fue desregistrado. Si seguia como predeterminado, " +
-            "Windows te pedira elegir otro navegador al abrir un enlace.");
+        Msg("BrowSel was unregistered. If it was still the default, "
+            + "Windows will ask you to pick another browser when you open a link.");
     }
 }
