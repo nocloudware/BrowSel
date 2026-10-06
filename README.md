@@ -25,30 +25,34 @@ Requires Windows 11.
 Requires the .NET 10 SDK.
 
 ```
-dotnet build BrowSel.csproj -c Release -p:Platform=x64
+dotnet publish BrowSel.csproj -c Release -p:Platform=x64 -r win-x64 --self-contained true -o out
 ```
 
-The executable lands in:
+The program lands in `out\`. It carries the Windows App SDK with it, so it needs nothing else
+installed. To build the installer as well, install [Inno Setup 6](https://jrsoftware.org/isdl.php)
+and run:
 
 ```
-bin\x64\Release\net10.0-windows10.0.19041.0\win-x64\BrowSel.exe
+"C:\Program Files\Inno Setup 6\ISCC.exe" installer\BrowSel.iss
 ```
 
-It carries the Windows App SDK with it, so it needs nothing else installed.
+That produces `dist\BrowSelSetup-<version>.exe`.
 
 ## Install
 
-1. Run `BrowSel.exe --register`. This adds BrowSel to Windows as a link handler and opens the
-   Default Apps settings.
-2. In that window, find **BrowSel** and set it as the handler for both **HTTP** and **HTTPS**.
-   Windows will not let any program choose this for you; you have to confirm it once.
+Download `BrowSelSetup-1.1.0.exe` from the releases page and run it. It installs into
+`%LocalAppData%\Programs\BrowSel`, adds a Start menu entry and an entry in
+*Apps installed by Windows*, and registers BrowSel as a link handler.
+
+Then:
+
+1. Open **Settings > Apps > Default apps** and find **BrowSel**.
+2. Set it as the handler for both **HTTP** and **HTTPS**. Windows will not let any program choose
+   this for you; you have to confirm it once. The installer offers to open that page for you.
 3. Click any link on the web. BrowSel opens.
 
-To remove it:
-
-```
-BrowSel.exe --unregister
-```
+To remove it, uninstall it from *Apps installed by Windows*. That also removes your settings.
+Running `BrowSel.exe --unregister` does the same from the command line, for a portable copy.
 
 If it was still the default handler, Windows will ask you to pick another browser.
 
