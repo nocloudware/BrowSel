@@ -30,34 +30,49 @@ static class Update
             if (ver == null || ver <= Current) return null;
 
             foreach (var a in json.RootElement.GetProperty("assets").EnumerateArray())
-                if (a.GetProperty("name").GetString()?.EndsWith(".exe", StringComparison.OrdinalIgnoreCase) == true)
+            {
+                var name = a.GetProperty("name").GetString() ?? "";
+                if (name.EndsWith(".zip", StringComparison.OrdinalIgnoreCase) ||
+                    name.EndsWith(".exe", StringComparison.OrdinalIgnoreCase))
                     return (ver, a.GetProperty("browser_download_url").GetString()!);
+            }
 
             return null;
         }
         catch { return null; } // offline, rate limited, malformed json: treat as "nothing to offer"
     }
 
-    // Downloads next to the current exe and lets a helper do the swap once we exit.
+    // The release ships the whole program as a zip, because BrowSel is a folder of files around the
+    // exe and not a single binary. So the zip is downloaded next to it and a helper unpacks it over
+    // the install folder once we exit. A lone exe could not be swapped anyway.
     internal static async Task InstallAsync(string url)
     {
         var exe = Environment.ProcessPath ?? throw new InvalidOperationException("no exe path");
-        var staged = Path.Combine(AppContext.BaseDirectory, Path.GetFileName(exe) + ".new");
-        var script = Path.Combine(AppContext.BaseDirectory, "browsel-update.ps1");
+        var folder = AppContext.BaseDirectory;
+        var zip = Path.Combine(folder, "browsel-update.zip");
+        var script = Path.Combine(folder, "browsel-update.ps1");
 
-        using (var http = new HttpClient { Timeout = TimeSpan.FromMinutes(5) })
+        using (var http = new HttpClient { Timeout = TimeSpan.FromMinutes(10) })
         using (var src = await http.GetStreamAsync(url))
-        using (var dst = File.Create(staged))
+        using (var dst = File.Create(zip))
             await src.CopyToAsync(dst);
 
         File.WriteAllText(script, $@"
-$staged = '{staged}'
-$target = '{exe}'
+$zip = '{zip}'
+$dir = '{folder}'
 $me = '{script}'
 while (Get-Process -Id {Environment.ProcessId} -EA SilentlyContinue) {{ Start-Sleep -Milliseconds 300 }}
-Move-Item -LiteralPath $staged -Destination $target -Force
-Start-Process $target
-Remove-Item -LiteralPath $me -Force -EA SilentlyContinue
+Add-Type -AssemblyName System.IO.Compression.FileSystem
+$z = [IO.Compression.ZipFile]::OpenRead($zip)
+foreach ($e in $z.Entries) {{
+    if (-not $e.Name) {{ continue }}
+    $to = Join-Path $dir $e.FullName
+    [IO.Directory]::CreateDirectory([IO.Path]::GetDirectoryName($to)) | Out-Null
+    [IO.Compression.ZipFileExtensions]::ExtractToFile($e, $to, $true)
+}}
+$z.Dispose()
+Start-Process '{exe}'
+Remove-Item -LiteralPath $zip, $me -Force -EA SilentlyContinue
 ");
 
         Process.Start(new ProcessStartInfo("powershell.exe",
