@@ -7,3 +7,9 @@ BrowSel uses the following third-party components:
 Windows App SDK is distributed under the MIT license.
 The native Windows components (Windows SDK) are property of Microsoft
 Corporation and are distributed under the Windows SDK terms.
+
+Assets
+------
+The country flag images in Assets/ come from flagcdn.com and are in the public domain.
+
+- https://flagcdn.com

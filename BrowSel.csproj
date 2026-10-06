@@ -8,6 +8,7 @@
     <RuntimeIdentifiers>win-x64</RuntimeIdentifiers>
     <Platforms>x64</Platforms>
     <UseWinUI>true</UseWinUI>
+    <Version>1.1.0</Version>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>BrowSel</RootNamespace>
@@ -20,9 +21,21 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Content Include="Assets\*.png" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+  </ItemGroup>
+  <ItemGroup>
     <PackageReference Include="Microsoft.WindowsAppSDK" Version="1.8.251106002" />
     <PackageReference Include="Microsoft.Windows.SDK.BuildTools" Version="10.0.26100.7175" />
     <PackageReference Include="System.Management" Version="8.0.0" />
   </ItemGroup>
 
+<Target Name="CopyXamlResources" AfterTargets="Publish">
+    <!-- Without this the published exe dies on start: the compiled XAML and the resource index
+         are left behind in bin, and the app cannot build its window without them. -->
+    <ItemGroup>
+      <XamlResource Include="$(OutputPath)*.xbf" />
+      <XamlResource Include="$(OutputPath)$(AssemblyName).pri" />
+    </ItemGroup>
+    <Copy SourceFiles="@(XamlResource)" DestinationFolder="$(PublishDir)" SkipUnchangedFiles="true" />
+  </Target>
 </Project>

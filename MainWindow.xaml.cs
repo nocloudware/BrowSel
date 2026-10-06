@@ -6,6 +6,7 @@ using Microsoft.UI.Xaml.Documents;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Imaging;
+using Windows.ApplicationModel.DataTransfer;
 using Windows.Graphics;
 using Windows.Storage;
 using Windows.Storage.FileProperties;
@@ -16,6 +17,8 @@ namespace BrowSel;
 public sealed partial class MainWindow : Window
 {
     readonly List<Row> _rows = new();
+    List<Editors.Ed> _editors = new();
+    readonly List<(int Index, string Exe, Image Img)> _editorIcons = new();
     readonly Dictionary<string, BitmapSource> _icons = new();
     Settings _cfg = Settings.Load(Discover.Browsers);
 
@@ -23,12 +26,16 @@ public sealed partial class MainWindow : Window
     {
         InitializeComponent();
 
+        // The saved language wins; otherwise the one from the operating system.
+        if (_cfg.Lang != "") S.Lang = _cfg.Lang;
+
         // Translucent backdrop, like the native Windows 11 apps
         SystemBackdrop = new MicaBackdrop();
         ExtendsContentIntoTitleBar = true;
         SetTitleBar(titleBar);
 
         txtUrl.Text = Program.Url;
+        ApplyText();
         Build();
 
         Closed += (_, _) => Save();
@@ -37,10 +44,56 @@ public sealed partial class MainWindow : Window
         Activated += First;
     }
 
+    // Every visible string comes from here so it can follow the chosen language.
+    void ApplyText()
+    {
+        txtPick.Text = S.T("pickTitle");
+        empty.Text = S.T("empty");
+        ToolTipService.SetToolTip(btnSettings, S.T("settings"));
+        dlgSettings.Title = S.T("dialogTitle");
+        dlgSettings.PrimaryButtonText = S.T("save");
+        dlgSettings.CloseButtonText = S.T("cancel");
+        btnUpdate.Content = S.T("checkUpdates");
+        lblEditor.Text = S.T("editor");
+        lblLang.Text = S.T("langLabel");
+        ToolTipService.SetToolTip(editorBox, S.T("editorTip"));
+    }
+
+    // Looks at the repo releases and, if there is a newer one, asks before installing it.
+    async void OnUpdateClick(object sender, RoutedEventArgs e)
+    {
+        btnUpdate.IsEnabled = false;
+        btnUpdate.Content = S.T("checking");
+        try
+        {
+            var found = await Update.FindAsync();
+            btnUpdate.IsEnabled = true;
+            btnUpdate.Content = S.T("checkUpdates");
+
+            if (found is null) { Program.Msg(S.T("upToDate")); return; }
+
+            dlgUpdate.Title = S.F("confirmUpdate", found.Value.Ver.ToString(2));
+            dlgUpdate.PrimaryButtonText = S.T("yes");
+            dlgUpdate.CloseButtonText = S.T("no");
+            if (await dlgUpdate.ShowAsync() != ContentDialogResult.Primary) return;
+
+            btnUpdate.Content = S.T("downloading");
+            await Update.InstallAsync(found.Value.Url);
+            Close(); // the helper takes over: it waits for us, swaps the file and starts it again
+        }
+        catch
+        {
+            btnUpdate.IsEnabled = true;
+            btnUpdate.Content = S.T("checkUpdates");
+            Program.Msg(S.T("updateFailed"));
+        }
+    }
+
     void First(object sender, WindowActivatedEventArgs e)
     {
         Activated -= First;
         var id = Win32Interop.GetWindowIdFromWindow(WinRT.Interop.WindowNative.GetWindowHandle(this));
+        Program.Owner = WinRT.Interop.WindowNative.GetWindowHandle(this); // message boxes stay in front
         var app = AppWindow.GetFromWindowId(id);
         var area = DisplayArea.GetFromWindowId(id, DisplayAreaFallback.Primary).WorkArea;
         const int w = 560, h = 640;
@@ -51,10 +104,19 @@ public sealed partial class MainWindow : Window
             titleBar.Padding = new Thickness(16, 0, (app.TitleBar.RightInset / root.XamlRoot.RasterizationScale) + 4, 0);
     }
 
+    // Redraws the whole tree from scratch: used at start and every time settings are confirmed.
+    void Rebuild()
+    {
+        _rows.Clear();
+        tree.Visibility = Visibility.Visible;
+        empty.Visibility = Visibility.Collapsed;
+        Build();
+    }
+
     void Build()
     {
         int total = 0;
-        foreach (var b in Discover.Browsers.Where(b => _cfg.Browsers.Contains(b.Name)))
+        foreach (var b in Discover.Browsers.Where(b => _cfg.Browsers.Contains(b.Name) && Discover.FindExe(b) != null))
         {
             List<Entry> list;
             try { list = Discover.Load(b); } catch { list = new(); } // one broken browser must not take the picker down
@@ -68,6 +130,10 @@ public sealed partial class MainWindow : Window
 
         _rows.Add(row);
     }
+
+        // Two standing options at the end: open the link in the editor, or just copy it.
+        _rows.Add(new Row { Action = "editor" });
+        _rows.Add(new Row { Action = "copy" });
 
         if (total == 0)
         {
@@ -99,7 +165,11 @@ public sealed partial class MainWindow : Window
         {
             foreach (var r in rs)
             {
-                vis.Add(new Item { Row = r, View = r.Entry is null ? HeadView(r) : LeafView(r.Entry) });
+                vis.Add(new Item
+                {
+                    Row = r,
+                    View = r.Action is not null ? ActionView(r) : r.Entry is not null ? LeafView(r.Entry) : HeadView(r),
+                });
                 if (r.Expanded) Walk(r.Kids);
             }
         }
@@ -135,6 +205,28 @@ public sealed partial class MainWindow : Window
         return head;
     }
 
+    // The two standing rows: icon + label, no chevron, no dot.
+    UIElement ActionView(Row r)
+    {
+        var icon = new FontIcon
+        {
+            Glyph = r.Action == "editor" ? "\uE70F" : "\uE8C8",
+            FontSize = 14,
+            VerticalAlignment = VerticalAlignment.Center,
+        };
+        var txt = new TextBlock
+        {
+            Text = r.Action == "editor" ? S.T("openInEditor") : S.T("copyLink"),
+            VerticalAlignment = VerticalAlignment.Center,
+        };
+        var grid = new Grid { ColumnSpacing = 8, Margin = new Thickness(22, 0, 0, 0),
+            ColumnDefinitions = { new ColumnDefinition { Width = new GridLength(18) }, new ColumnDefinition() } };
+        Grid.SetColumn(txt, 1);
+        grid.Children.Add(icon);
+        grid.Children.Add(txt);
+        return grid;
+    }
+
     static UIElement LeafView(Entry e)
     {
         // Status dot drawn, not a font character: it looks the same in any theme.
@@ -152,7 +244,7 @@ public sealed partial class MainWindow : Window
         Grid.SetColumn(txt, 1);
         leaf.Children.Add(dot);
         leaf.Children.Add(txt);
-        if (e.Open) ToolTipService.SetToolTip(leaf, "Detected by: " + e.Why);
+        if (e.Open) ToolTipService.SetToolTip(leaf, S.T("detectedBy") + e.Why);
         return leaf;
     }
 
@@ -173,7 +265,7 @@ public sealed partial class MainWindow : Window
             }
             catch { /* no icon: the glyph stays. One broken browser cannot cut the rest. */ }
         }
-        Reflow(); // repinta ahora que ya hay iconos
+        Reflow(); // repaints now that the icons are in
     }
 
     // A click on a browser row opens or collapses it; a click on a profile opens the link.
@@ -187,6 +279,12 @@ public sealed partial class MainWindow : Window
             Close();
             return;
         }
+        if (r.Action is not null)
+        {
+            DoAction(r.Action);
+            Close();
+            return;
+        }
         if (r.Kids.Count == 0) return;
         r.Expanded = !r.Expanded;
         // The XAML engine breaks natively (not a catchable exception) if you replace the
@@ -194,23 +292,155 @@ public sealed partial class MainWindow : Window
         DispatcherQueue.TryEnqueue(Reflow);
     }
 
-    async void OnSettingsClick(object sender, RoutedEventArgs e)
+    // Editor and Copy both leave the app without opening the link in a browser.
+    void DoAction(string action)
     {
-        checks.Children.Clear();
-        foreach (var b in Discover.Browsers)
-            checks.Children.Add(new CheckBox { Content = b.Name, IsChecked = _cfg.Browsers.Contains(b.Name) });
-
-        if (await dlgSettings.ShowAsync() != ContentDialogResult.Primary) return; // cancel changes nothing
-
-        var keep = checks.Children.OfType<CheckBox>()
-            .Where(c => c.IsChecked == true).Select(c => (string)c.Content).ToArray();
-        if (keep.Length == 0)
+        if (action == "copy")
         {
-            Program.Msg("Leave at least one browser selected.");
+            var pkg = new DataPackage();
+            pkg.SetText(Program.Url);
+            Clipboard.SetContent(pkg);
+            // Without Flush the content is lost: the process exits right after.
+            Clipboard.Flush();
             return;
         }
-        (_cfg = _cfg with { Browsers = keep }).Save();
-        Program.Msg("Saved. It takes effect the next time you open a link.");
+        Editors.Open(_cfg.Editor != "" ? _cfg.Editor : Editors.DefaultId(), Program.Url);
+    }
+
+    void BuildEditors()
+    {
+        editorBox.Items.Clear();
+        var all = Editors.All();
+        foreach (var ed in all)
+        {
+            var img = new Image { Width = 16, Height = 16, Stretch = Stretch.Uniform, VerticalAlignment = VerticalAlignment.Center };
+            var txt = new TextBlock { Text = ed.Name, VerticalAlignment = VerticalAlignment.Center };
+            Grid.SetColumn(img, 0);
+            Grid.SetColumn(txt, 1);
+            editorBox.Items.Add(new Grid
+            {
+                ColumnSpacing = 8,
+                ColumnDefinitions = { new ColumnDefinition { Width = new GridLength(16) }, new ColumnDefinition() },
+                Children = { img, txt },
+            });
+            _editorIcons.Add((editorBox.Items.Count - 1, ed.Exe, img));
+        }
+
+        _editors = all;
+        var want = _cfg.Editor != "" ? _cfg.Editor : Editors.DefaultId();
+        var pick = all.FindIndex(e => string.Equals(e.Id, want, StringComparison.OrdinalIgnoreCase));
+        editorBox.SelectedIndex = pick >= 0 ? pick : 0;
+
+        _ = LoadEditorIcons();
+    }
+
+    // Same trick as the browser icons: read the executable thumbnail from disk.
+    async Task LoadEditorIcons()
+    {
+        foreach (var (index, exe, img) in _editorIcons)
+        {
+            try
+            {
+                var file = await StorageFile.GetFileFromPathAsync(exe);
+                using var th = await file.GetThumbnailAsync(ThumbnailMode.SingleItem, 64, ThumbnailOptions.ResizeThumbnail);
+                var bmp = new BitmapImage();
+                await bmp.SetSourceAsync(th);
+                img.Source = bmp;
+            }
+            catch { /* no icon: the name alone is enough */ }
+        }
+        _editorIcons.Clear();
+    }
+
+    async void OnSettingsClick(object sender, RoutedEventArgs e)
+    {
+        // Only browsers that are really installed: otherwise the picker shows orphan branches.
+        checks.Children.Clear();
+        foreach (var b in Discover.Browsers.Where(b => Discover.FindExe(b) != null))
+        {
+            var box = new CheckBox { Content = b.Name, IsChecked = _cfg.Browsers.Contains(b.Name) };
+            box.Checked += OnPreview;
+            box.Unchecked += OnPreview;
+            checks.Children.Add(box);
+        }
+
+        BuildEditors();
+        BuildLanguages();
+
+        var wasLang = S.Lang;
+        var wasBrowsers = _cfg.Browsers;
+        var wasEditor = _cfg.Editor;
+
+        if (await dlgSettings.ShowAsync() == ContentDialogResult.Primary)
+        {
+            var editor = editorBox.SelectedIndex >= 0 && editorBox.SelectedIndex < _editors.Count
+                ? _editors[editorBox.SelectedIndex].Id
+                : _cfg.Editor;
+
+            if (Ticked().Length == 0)
+            {
+                Program.Msg(S.T("needOne"));
+                S.Lang = wasLang;
+                _cfg = _cfg with { Browsers = wasBrowsers };
+            }
+            else _cfg = _cfg with { Lang = S.Lang, Editor = editor };
+
+            _cfg.Save();
+            ApplyText();
+            return;
+        }
+
+        // Cancel: put everything back the way it was.
+        S.Lang = wasLang;
+        _cfg = _cfg with { Browsers = wasBrowsers, Editor = wasEditor };
+        ApplyText();
+        Rebuild();
+    }
+
+    string[] Ticked() => checks.Children.OfType<CheckBox>()
+        .Where(c => c.IsChecked == true).Select(c => (string)c.Content).ToArray();
+
+    // Live preview: every change repaints the picker right away. Cancel undoes it.
+    void OnPreview(object sender, RoutedEventArgs e)
+    {
+        var keep = Ticked();
+        if (keep.Length == 0) return; // cannot preview an empty picker
+        _cfg = _cfg with { Browsers = keep };
+        Rebuild();
+    }
+
+    void OnPreviewLang(object sender, SelectionChangedEventArgs e)
+    {
+        var i = langBox.SelectedIndex;
+        if (i < 0 || i >= S.Codes.Length || S.Codes[i] == S.Lang) return;
+        S.Lang = S.Codes[i];
+        // Only the picker text: touching the dialog strings moves the open list under the cursor.
+        txtPick.Text = S.T("pickTitle");
+        empty.Text = S.T("empty");
+        Rebuild();
+    }
+
+    void BuildLanguages()
+    {
+        langBox.Items.Clear();
+        foreach (var code in S.Codes)
+        {
+            var flag = new Border { Child = Flag.Of(code), VerticalAlignment = VerticalAlignment.Center };
+            var name = new TextBlock { Text = S.Name(code), VerticalAlignment = VerticalAlignment.Center };
+            Grid.SetColumn(flag, 0);
+            Grid.SetColumn(name, 1);
+            langBox.Items.Add(new Grid
+            {
+                ColumnSpacing = 10,
+                ColumnDefinitions =
+                {
+                    new ColumnDefinition { Width = new GridLength(34) },
+                    new ColumnDefinition(),
+                },
+                Children = { flag, name },
+            });
+        }
+        langBox.SelectedIndex = Array.IndexOf(S.Codes, S.Lang);
     }
 
     // Expanded branches and ticked browsers are remembered for the next
@@ -225,6 +455,7 @@ sealed class Row
     public Entry? Entry { get; set; }
     public List<Row> Kids { get; set; } = new();
     public bool Expanded { get; set; }
+    public string? Action { get; set; }
 }
 
 // What gets drawn in a TreeView row. Rebuilt from scratch on every refresh so the

@@ -77,7 +77,7 @@ static class Discover
         {
             // No profile list (e.g. Opera): a single entry
             bool run = Snapshot().Any(p => p.Name.Equals(b.ExeName, StringComparison.OrdinalIgnoreCase) && !p.Cmd.Contains("--type="));
-            return new() { new Entry(b, exe, "", $"{b.Name} (single profile)", run, run ? "process" : "") };
+            return new() { new Entry(b, exe, "", S.F("singleProfile", b.Name), run, run ? S.T("whyProcess") : "") };
         }
 
         var names = cache.EnumerateObject().ToDictionary(
@@ -106,7 +106,7 @@ static class Discover
             var full = cur.GetValueOrDefault("IsRelative") == "1" ? Path.Combine(baseDir, path.Replace('/', '\\')) : path;
             // ponytail: if Firefox changes how parent.lock is taken, this stops seeing the open profile.
             bool open = IsLocked(Path.Combine(full, "parent.lock"));
-            result.Add(new Entry(b, exe, name, $"{name}  (Firefox)", open, open ? "lock file" : ""));
+            result.Add(new Entry(b, exe, name, $"{name}  (Firefox)", open, open ? S.T("whyLock") : ""));
         }
 
         foreach (var raw in File.ReadAllLines(b.Data))
@@ -151,7 +151,7 @@ static class Discover
             if (!p.Name.Equals(Path.GetFileName(exe), StringComparison.OrdinalIgnoreCase) || p.Cmd.Contains("--type=")) continue;
             mainPids.Add(p.Pid);
             var m = Regex.Match(p.Cmd, "--profile-directory=(?:\"([^\"]+)\"|(\\S+))");
-            if (m.Success) Add(m.Groups[1].Success ? m.Groups[1].Value : m.Groups[2].Value, "command line");
+            if (m.Success) Add(m.Groups[1].Success ? m.Groups[1].Value : m.Groups[2].Value, S.T("whyCmdline"));
         }
         if (mainPids.Count == 0) return res; // browser closed
 
@@ -168,7 +168,7 @@ static class Discover
             foreach (var kv in names)
                 if (title.EndsWith($" - {b.Product} - {kv.Value}", StringComparison.OrdinalIgnoreCase) ||
                     title.EndsWith($" - {kv.Value} - {b.Product}", StringComparison.OrdinalIgnoreCase))
-                    Add(kv.Key, "window");
+                    Add(kv.Key, S.T("whyWindow"));
             return true;
         }, IntPtr.Zero);
 
@@ -176,11 +176,11 @@ static class Discover
         var root = Path.GetDirectoryName(b.Data)!;
         foreach (var dir in names.Keys)
             foreach (var probe in LockProbes)
-                if (IsLocked(Path.Combine(root, dir, probe))) { Add(dir, "lock file"); break; }
+                if (IsLocked(Path.Combine(root, dir, probe))) { Add(dir, S.T("whyLock")); break; }
 
         // 4 (fallback only): last_active_profiles, only if no other signal found anything
         if (res.Count == 0 && profile.TryGetProperty("last_active_profiles", out var last))
-            foreach (var x in last.EnumerateArray()) Add(x.GetString()!, "last active");
+            foreach (var x in last.EnumerateArray()) Add(x.GetString()!, S.T("whyLastActive"));
 
         return res;
     }

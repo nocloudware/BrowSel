@@ -10,12 +10,16 @@ static class Program
     static extern int MessageBoxW(IntPtr h, string text, string caption, uint type);
     const uint MbIconInformation = 0x40, MbIconError = 0x10;
 
+    // The window that owns the message boxes. Without an owner they open behind the app and look like
+// nothing happened.
+internal static IntPtr Owner;
+
     internal static void Msg(string text, string title = "BrowSel") =>
-        MessageBoxW(IntPtr.Zero, text, title, MbIconInformation);
+        MessageBoxW(Owner, text, title, MbIconInformation);
 
     internal static void Error(Exception? ex) =>
-        MessageBoxW(IntPtr.Zero,
-            "BrowSel closed because of an unexpected error.\n\n" + (ex?.ToString() ?? "no details available"),
+        MessageBoxW(Owner,
+            S.T("crash") + "\n\n" + (ex?.ToString() ?? S.T("noDetail")),
             "BrowSel", MbIconError);
 
     [STAThread]
@@ -23,8 +27,7 @@ static class Program
     {
         if (args.Length == 0)
         {
-            Msg("Run: BrowSel.exe --register (or --unregister to remove it)\n"
-                + "Then pick 'BrowSel' as your default browser.");
+            Msg(S.T("noArgs"));
             return;
         }
         if (args[0] == "--register") { Register(); return; }
@@ -62,7 +65,7 @@ static class Program
             var apphost = Path.Combine(AppContext.BaseDirectory, "BrowSel.exe");
             if (!File.Exists(apphost))
             {
-                Msg("Build with 'dotnet build' and run BrowSel.exe directly.");
+                Msg(S.T("dotnetHint"));
                 return;
             }
             exe = apphost;
@@ -79,7 +82,7 @@ static class Program
         using (var k = Registry.CurrentUser.CreateSubKey($@"{app}\Capabilities"))
         {
             k.SetValue("ApplicationName", "BrowSel");
-            k.SetValue("ApplicationDescription", "Pick the browser and profile for each link");
+            k.SetValue("ApplicationDescription", S.T("appDescription"));
             using var u = k.CreateSubKey("URLAssociations");
             u.SetValue("http", prog);
             u.SetValue("https", prog);
@@ -88,9 +91,7 @@ static class Program
             k.SetValue("BrowSel", $@"{app}\Capabilities");
 
         Process.Start(new ProcessStartInfo("ms-settings:defaultapps") { UseShellExecute = true })?.Dispose();
-        Msg("BrowSel is registered, but it is NOT your default browser yet. "
-            + "Windows requires you to confirm it: in the Settings window that just opened, "
-            + "find BrowSel and set it for HTTP and HTTPS.");
+        Msg(S.T("registered"));
     }
 
     static void Unregister()
@@ -99,7 +100,6 @@ static class Program
         Registry.CurrentUser.DeleteSubKeyTree(@"Software\BrowSel", false);
         using (var k = Registry.CurrentUser.OpenSubKey(@"Software\RegisteredApplications", true))
             k?.DeleteValue("BrowSel", false);
-        Msg("BrowSel was unregistered. If it was still the default, "
-            + "Windows will ask you to pick another browser when you open a link.");
+        Msg(S.T("unregistered"));
     }
 }

@@ -20,7 +20,7 @@
         </Grid>
 
         <StackPanel Grid.Row="1" Margin="16,0,16,12" Spacing="2">
-            <TextBlock Text="Choose the profile to open this link:" Style="{StaticResource SubtitleTextBlockStyle}"
+            <TextBlock x:Name="txtPick" Style="{StaticResource SubtitleTextBlockStyle}"
                        TextWrapping="Wrap" />
             <TextBlock x:Name="txtUrl" Style="{StaticResource CaptionTextBlockStyle}"
                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
@@ -37,14 +37,28 @@
 
         <TextBlock x:Name="empty" Grid.Row="2" Margin="16" Visibility="Collapsed" TextWrapping="Wrap"
                    Style="{StaticResource BodyTextBlockStyle}"
-                   Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                   Text="No browsers or profiles were found." />
+                   Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
 
-        <ContentDialog x:Name="dlgSettings"
-                       Title="Browsers to show"
-                       PrimaryButtonText="Save"
-                       CloseButtonText="Cancel">
-            <StackPanel x:Name="checks" Spacing="10" MinWidth="260" />
+        <!-- Text is set from code: it follows the language -->
+        <ContentDialog x:Name="dlgSettings" MinWidth="300">
+            <StackPanel Spacing="16">
+                <StackPanel x:Name="checks" Spacing="10" />
+                <StackPanel Spacing="6">
+                    <TextBlock x:Name="lblEditor" Style="{StaticResource CaptionTextBlockStyle}"
+                               Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                    <ComboBox x:Name="editorBox" HorizontalAlignment="Stretch" />
+                </StackPanel>
+                <StackPanel Spacing="6">
+                    <TextBlock x:Name="lblLang" Style="{StaticResource CaptionTextBlockStyle}"
+                               Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                    <ComboBox x:Name="langBox" HorizontalAlignment="Stretch"
+                              SelectionChanged="OnPreviewLang" />
+                </StackPanel>
+                <Button x:Name="btnUpdate" HorizontalAlignment="Stretch"
+                        HorizontalContentAlignment="Center" Click="OnUpdateClick" />
+            </StackPanel>
         </ContentDialog>
+
+        <ContentDialog x:Name="dlgUpdate" PrimaryButtonText="" CloseButtonText="" />
     </Grid>
 </Window>
