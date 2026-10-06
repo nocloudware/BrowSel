@@ -239,7 +239,8 @@ public sealed partial class MainWindow : Window
             Background = e.Open ? Open() : Off(),
         };
         var txt = new TextBlock { Text = e.Label, VerticalAlignment = VerticalAlignment.Center };
-        var leaf = new Grid { ColumnSpacing = 10, Margin = new Thickness(22, 0, 0, 0),
+        // Deeper than the browser rows (which start their name at 48) so the hierarchy reads at a glance.
+var leaf = new Grid { ColumnSpacing = 10, Margin = new Thickness(38, 0, 0, 0),
             ColumnDefinitions = { new ColumnDefinition { Width = new GridLength(8) }, new ColumnDefinition() } };
         Grid.SetColumn(txt, 1);
         leaf.Children.Add(dot);
