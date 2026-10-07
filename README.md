@@ -9,12 +9,19 @@ the ones already running marked — so you pick where the link goes.
 Requires Windows 11.
 
 ![The BrowSel picker showing browser profiles and the Editor and Copy actions](BrowSel-main.png)
-
 ![Brave's expanded profile list in BrowSel](BrowSel-expanded.jpg)
-
 ![BrowSel's Settings dialog with browser selection and language options](BrowSel-config.png)
-
 ![BrowSel's About dialog showing the app icon, version, and credits](BrowSel-about.png)
+
+<p align="center">
+  <img src="BrowSel-main.png" width="66%" alt="The BrowSel picker showing browser profiles and the Editor and Copy actions">
+  <br>
+  <img src="BrowSel-expanded.jpg" width="66%" alt="Brave's expanded profile list in BrowSel">
+  <br>
+  <img src="BrowSel-config.png" width="66%" alt="BrowSel's Settings dialog with browser selection and language options">
+  <br>
+  <img src="BrowSel-about.png" width="66%" alt="BrowSel's About dialog showing the app icon, version, and credits">
+</p>
 
 ## Features
 
