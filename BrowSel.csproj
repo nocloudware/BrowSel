@@ -9,6 +9,7 @@
     <Platforms>x64</Platforms>
     <UseWinUI>true</UseWinUI>
     <Version>1.1.0</Version>
+    <ApplicationIcon>BrowSel.ico</ApplicationIcon>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>BrowSel</RootNamespace>

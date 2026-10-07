@@ -42,37 +42,29 @@ static class Update
         catch { return null; } // offline, rate limited, malformed json: treat as "nothing to offer"
     }
 
-    // The release ships the whole program as a zip, because BrowSel is a folder of files around the
-    // exe and not a single binary. So the zip is downloaded next to it and a helper unpacks it over
-    // the install folder once we exit. A lone exe could not be swapped anyway.
+    // The release asset is the Inno Setup installer. It is downloaded next to us and run silently once
+    // we exit: it puts the new files in place over the current install and registers itself.
     internal static async Task InstallAsync(string url)
     {
         var exe = Environment.ProcessPath ?? throw new InvalidOperationException("no exe path");
         var folder = AppContext.BaseDirectory;
-        var zip = Path.Combine(folder, "browsel-update.zip");
+        var setup = Path.Combine(folder, "browsel-update.exe");
         var script = Path.Combine(folder, "browsel-update.ps1");
 
         using (var http = new HttpClient { Timeout = TimeSpan.FromMinutes(10) })
         using (var src = await http.GetStreamAsync(url))
-        using (var dst = File.Create(zip))
+        using (var dst = File.Create(setup))
             await src.CopyToAsync(dst);
 
         File.WriteAllText(script, $@"
-$zip = '{zip}'
+$setup = '{setup}'
 $dir = '{folder}'
 $me = '{script}'
+$exe = '{exe}'
 while (Get-Process -Id {Environment.ProcessId} -EA SilentlyContinue) {{ Start-Sleep -Milliseconds 300 }}
-Add-Type -AssemblyName System.IO.Compression.FileSystem
-$z = [IO.Compression.ZipFile]::OpenRead($zip)
-foreach ($e in $z.Entries) {{
-    if (-not $e.Name) {{ continue }}
-    $to = Join-Path $dir $e.FullName
-    [IO.Directory]::CreateDirectory([IO.Path]::GetDirectoryName($to)) | Out-Null
-    [IO.Compression.ZipFileExtensions]::ExtractToFile($e, $to, $true)
-}}
-$z.Dispose()
-Start-Process '{exe}'
-Remove-Item -LiteralPath $zip, $me -Force -EA SilentlyContinue
+Start-Process $setup -ArgumentList '/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART','/SP-' -Wait
+Start-Process $exe
+Remove-Item -LiteralPath $setup, $me -Force -EA SilentlyContinue
 ");
 
         Process.Start(new ProcessStartInfo("powershell.exe",

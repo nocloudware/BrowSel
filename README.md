@@ -8,6 +8,8 @@ the ones already running marked — so you pick where the link goes.
 
 Requires Windows 11.
 
+![The BrowSel picker showing browser profiles and the Editor and Copy actions](BrowSel.jpg)
+
 ## Features
 
 - **Browser + profile picker.** Every installed browser, every profile it has.

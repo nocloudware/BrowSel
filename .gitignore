@@ -1,5 +1,13 @@
 bin/
 obj/
+
+# Publish output and installer build. Both are just copies of the build; never committed.
+out/
+out-rel/
 dist/
+
 .vs/
+.idea/
 *.user
+*.suo
+*.pdb
