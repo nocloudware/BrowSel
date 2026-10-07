@@ -102,9 +102,10 @@ static class Discover
         void Add(string name, string full)
         {
             if (result.Any(e => string.Equals(e.Dir, full, StringComparison.OrdinalIgnoreCase))) return;
+            var real = RealName(full);
             // ponytail: if Firefox changes how parent.lock is taken, this stops seeing the open profile.
             bool open = IsLocked(Path.Combine(full, "parent.lock"));
-            result.Add(new Entry(b, exe, full, $"{name}  (Firefox)", open, open ? S.T("whyLock") : ""));
+            result.Add(new Entry(b, exe, full, $"{(real == "" ? name : real)}  (Firefox)", open, open ? S.T("whyLock") : ""));
         }
 
         void Flush()
@@ -133,6 +134,18 @@ static class Discover
                     Add(Path.GetFileName(dir).Split('.').Last(), dir);
 
         return result;
+    }
+
+    // The name the user gave a profile, not the name of the folder it happens to sit in. Firefox
+    // keeps it in prefs.js as the shortcut it created for that profile; profiles.ini only has
+    // whatever name Firefox last wrote there, which is the technical one after a rewrite.
+    static string RealName(string profileDir)
+    {
+        var prefs = Path.Combine(profileDir, "prefs.js");
+        if (!File.Exists(prefs)) return "";
+        var m = Regex.Match(File.ReadAllText(prefs),
+            "^user_pref\\(\"browser\\.profiles\\.shortcutFileName\", \"([^\"]+)\"\\);", RegexOptions.Multiline);
+        return m.Success ? Path.GetFileNameWithoutExtension(m.Groups[1].Value) : "";
     }
 
     // ---------- Open-profile detection (Chromium) ----------

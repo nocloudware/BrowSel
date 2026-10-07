@@ -5,7 +5,7 @@
 ; to Program Files.
 
 #define AppName "BrowSel"
-#define AppVersion "1.1.3"
+#define AppVersion "1.1.4"
 #define AppExeName "BrowSel.exe"
 
 [Setup]
