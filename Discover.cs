@@ -99,14 +99,19 @@ static class Discover
         var cur = new Dictionary<string, string>();
         string sec = "";
 
+        void Add(string name, string full)
+        {
+            if (result.Any(e => string.Equals(e.Dir, full, StringComparison.OrdinalIgnoreCase))) return;
+            // ponytail: if Firefox changes how parent.lock is taken, this stops seeing the open profile.
+            bool open = IsLocked(Path.Combine(full, "parent.lock"));
+            result.Add(new Entry(b, exe, full, $"{name}  (Firefox)", open, open ? S.T("whyLock") : ""));
+        }
+
         void Flush()
         {
             if (!sec.StartsWith("[Profile", StringComparison.OrdinalIgnoreCase)) return;
             if (!cur.TryGetValue("Name", out var name) || !cur.TryGetValue("Path", out var path)) return;
-            var full = cur.GetValueOrDefault("IsRelative") == "1" ? Path.Combine(baseDir, path.Replace('/', '\\')) : path;
-            // ponytail: if Firefox changes how parent.lock is taken, this stops seeing the open profile.
-            bool open = IsLocked(Path.Combine(full, "parent.lock"));
-            result.Add(new Entry(b, exe, name, $"{name}  (Firefox)", open, open ? S.T("whyLock") : ""));
+            Add(name, cur.GetValueOrDefault("IsRelative") == "1" ? Path.Combine(baseDir, path.Replace('/', '\\')) : path);
         }
 
         foreach (var raw in File.ReadAllLines(b.Data))
@@ -117,6 +122,16 @@ static class Discover
             if (i > 0) cur[l[..i]] = l[(i + 1)..];
         }
         Flush();
+
+        // Firefox can drop a profile from profiles.ini when it rewrites the file, but it leaves the
+        // folder behind with everything still in it. Reading only the ini hid those, so scan the
+        // profile folder too: a real profile has a prefs.js.
+        var profilesDir = Path.Combine(baseDir, "Profiles");
+        if (Directory.Exists(profilesDir))
+            foreach (var dir in Directory.EnumerateDirectories(profilesDir))
+                if (File.Exists(Path.Combine(dir, "prefs.js")))
+                    Add(Path.GetFileName(dir).Split('.').Last(), dir);
+
         return result;
     }
 
@@ -198,7 +213,9 @@ static class Discover
         var psi = new ProcessStartInfo(e.Exe) { UseShellExecute = false };
         if (e.B.Kind == Kind.Firefox)
         {
-            psi.ArgumentList.Add("-P"); psi.ArgumentList.Add(e.Dir);
+            // Dir is the full profile path: --profile opens a profile Firefox has dropped from
+            // profiles.ini too, -P only knows the ones the ini still lists.
+            psi.ArgumentList.Add("--profile"); psi.ArgumentList.Add(e.Dir);
             // Profile already open: reuse its instance. Closed: a new instance, no clash with other profiles.
             psi.ArgumentList.Add(e.Open ? "-new-tab" : "-no-remote");
             psi.ArgumentList.Add(url);
