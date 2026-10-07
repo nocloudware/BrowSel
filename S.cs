@@ -1,4 +1,4 @@
-﻿using Windows.Globalization;
+using Windows.Globalization;
 
 // App text in the 10 most spoken languages. The language comes from the operating system; if it is not
 // in the list, English is used.
@@ -78,11 +78,8 @@ static class S
             ["checkUpdates"] = "Check for updates",
             ["checking"] = "Checking...",
             ["upToDate"] = "You already have the latest version.",
-            ["updateFailed"] = "Could not check for updates. Check your internet connection.",
             ["confirmUpdate"] = "Do you want to install v{0}?",
-            ["downloading"] = "Downloading...",
-            ["yes"] = "Yes",
-            ["no"] = "No"
+            ["downloading"] = "Downloading..."
         },
         ["es"] = new()
         {
@@ -115,11 +112,8 @@ static class S
             ["checkUpdates"] = "Buscar actualizaciones",
             ["checking"] = "Buscando...",
             ["upToDate"] = "Ya tienes la última versión.",
-            ["updateFailed"] = "No se pudieron buscar actualizaciones. Revisa tu conexión a internet.",
             ["confirmUpdate"] = "¿Desea instalar la v{0}?",
-            ["downloading"] = "Descargando...",
-            ["yes"] = "Sí",
-            ["no"] = "No"
+            ["downloading"] = "Descargando..."
         },
         ["fr"] = new()
         {
@@ -152,11 +146,8 @@ static class S
             ["checkUpdates"] = "Rechercher des mises à jour",
             ["checking"] = "Recherche...",
             ["upToDate"] = "Vous avez déjà la dernière version.",
-            ["updateFailed"] = "Impossible de rechercher des mises à jour. Vérifiez votre connexion Internet.",
             ["confirmUpdate"] = "Voulez-vous installer la v{0} ?",
-            ["downloading"] = "Téléchargement...",
-            ["yes"] = "Oui",
-            ["no"] = "Non"
+            ["downloading"] = "Téléchargement..."
         },
         ["ru"] = new()
         {
@@ -189,11 +180,8 @@ static class S
             ["checkUpdates"] = "Проверить обновления",
             ["checking"] = "Проверка...",
             ["upToDate"] = "У вас уже последняя версия.",
-            ["updateFailed"] = "Не удалось проверить обновления. Проверьте подключение к интернету.",
             ["confirmUpdate"] = "Установить версию {0}?",
-            ["downloading"] = "Загрузка...",
-            ["yes"] = "Да",
-            ["no"] = "Нет"
+            ["downloading"] = "Загрузка..."
         },
         ["zh"] = new()
         {
@@ -226,11 +214,8 @@ static class S
             ["checkUpdates"] = "检查更新",
             ["checking"] = "正在检查...",
             ["upToDate"] = "你已经是最新版本。",
-            ["updateFailed"] = "无法检查更新。请检查你的网络连接。",
             ["confirmUpdate"] = "要安装 {0} 吗？",
-            ["downloading"] = "正在下载...",
-            ["yes"] = "是",
-            ["no"] = "否"
+            ["downloading"] = "正在下载..."
         },
         ["ja"] = new()
         {
@@ -263,11 +248,8 @@ static class S
             ["checkUpdates"] = "更新を確認",
             ["checking"] = "確認中...",
             ["upToDate"] = "すでに最新バージョンです。",
-            ["updateFailed"] = "更新を確認できませんでした。インターネット接続を確認してください。",
             ["confirmUpdate"] = "バージョン {0} をインストールしますか？",
-            ["downloading"] = "ダウンロード中...",
-            ["yes"] = "はい",
-            ["no"] = "いいえ"
+            ["downloading"] = "ダウンロード中..."
         },
         ["pt"] = new()
         {
@@ -300,11 +282,8 @@ static class S
             ["checkUpdates"] = "Verificar atualizações",
             ["checking"] = "Verificando...",
             ["upToDate"] = "Você já tem a versão mais recente.",
-            ["updateFailed"] = "Não foi possível verificar atualizações. Confira sua conexão com a internet.",
             ["confirmUpdate"] = "Deseja instalar a v{0}?",
-            ["downloading"] = "Baixando...",
-            ["yes"] = "Sim",
-            ["no"] = "Não"
+            ["downloading"] = "Baixando..."
         },
         ["hi"] = new()
         {
@@ -337,11 +316,8 @@ static class S
             ["checkUpdates"] = "अपडेट देखें",
             ["checking"] = "जाँच हो रही है...",
             ["upToDate"] = "आपके पास पहले से नवीनतम संस्करण है।",
-            ["updateFailed"] = "अपडेट नहीं ढूंढे जा सके। अपना इंटरनेट कनेक्शन जाँचें।",
             ["confirmUpdate"] = "क्या आप v{0} इंस्टॉल करना चाहते हैं?",
-            ["downloading"] = "डाउनलोड हो रहा है...",
-            ["yes"] = "हाँ",
-            ["no"] = "नहीं"
+            ["downloading"] = "डाउनलोड हो रहा है..."
         },
         ["ar"] = new()
         {
@@ -374,11 +350,8 @@ static class S
             ["checkUpdates"] = "التحقق من التحديثات",
             ["checking"] = "جارٍ التحقق...",
             ["upToDate"] = "لديك أحدث إصدار بالفعل.",
-            ["updateFailed"] = "تعذّر التحقق من التحديثات. تحقّق من اتصالك بالإنترنت.",
             ["confirmUpdate"] = "هل تريد تثبيت الإصدار {0}؟",
-            ["downloading"] = "جارٍ التنزيل...",
-            ["yes"] = "نعم",
-            ["no"] = "لا"
+            ["downloading"] = "جارٍ التنزيل..."
         },
         ["bn"] = new()
         {
@@ -411,11 +384,8 @@ static class S
             ["checkUpdates"] = "আপডেট পরীক্ষা করুন",
             ["checking"] = "পরীক্ষা হচ্ছে...",
             ["upToDate"] = "আপনার কাছেই সর্বশেষ সংস্করণ আছে।",
-            ["updateFailed"] = "আপডেট পরীক্ষা করা যায়নি। আপনার ইন্টারনেট সংযোগ দেখুন।",
             ["confirmUpdate"] = "আপনি কি v{0} ইনস্টল করতে চান?",
-            ["downloading"] = "ডাউনলোড হচ্ছে...",
-            ["yes"] = "হ্যাঁ",
-            ["no"] = "না"
+            ["downloading"] = "ডাউনলোড হচ্ছে..."
         },
     };
 }

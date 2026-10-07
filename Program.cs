@@ -8,7 +8,8 @@ static class Program
 {
     [DllImport("user32.dll", CharSet = CharSet.Unicode)]
     static extern int MessageBoxW(IntPtr h, string text, string caption, uint type);
-    const uint MbIconInformation = 0x40, MbIconError = 0x10;
+    const uint MbIconInformation = 0x40, MbIconError = 0x10, MbYesNo = 0x4;
+    const int IdYes = 6;
 
     // The window that owns the message boxes. Without an owner they open behind the app and look like
 // nothing happened.
@@ -16,6 +17,11 @@ internal static IntPtr Owner;
 
     internal static void Msg(string text, string title = "BrowSel") =>
         MessageBoxW(Owner, text, title, MbIconInformation);
+
+    // Yes/no question. A message box rather than a ContentDialog: the update button lives inside
+    // the settings dialog, and Windows refuses to open a second dialog on top of an open one.
+    internal static bool Confirm(string text) =>
+        MessageBoxW(Owner, text, "BrowSel", MbYesNo) == IdYes;
 
     internal static void Error(Exception? ex) =>
         MessageBoxW(Owner,

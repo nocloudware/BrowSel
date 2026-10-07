@@ -58,7 +58,5 @@
                         HorizontalContentAlignment="Center" Click="OnUpdateClick" />
             </StackPanel>
         </ContentDialog>
-
-        <ContentDialog x:Name="dlgUpdate" PrimaryButtonText="" CloseButtonText="" />
     </Grid>
 </Window>

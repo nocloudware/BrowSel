@@ -72,20 +72,19 @@ public sealed partial class MainWindow : Window
 
             if (found is null) { Program.Msg(S.T("upToDate")); return; }
 
-            dlgUpdate.Title = S.F("confirmUpdate", found.Value.Ver.ToString(2));
-            dlgUpdate.PrimaryButtonText = S.T("yes");
-            dlgUpdate.CloseButtonText = S.T("no");
-            if (await dlgUpdate.ShowAsync() != ContentDialogResult.Primary) return;
+            if (!Program.Confirm(S.F("confirmUpdate", found.Value.Ver.ToString(2)))) return;
 
             btnUpdate.Content = S.T("downloading");
             await Update.InstallAsync(found.Value.Url);
             Close(); // the helper takes over: it waits for us, swaps the file and starts it again
         }
-        catch
+        catch (Exception ex)
         {
             btnUpdate.IsEnabled = true;
             btnUpdate.Content = S.T("checkUpdates");
-            Program.Msg(S.T("updateFailed"));
+            // The real reason, not "check your internet": a download that failed looks identical
+            // from here and the guess sent us hunting for a network problem that did not exist.
+            Program.Error(ex);
         }
     }
 
