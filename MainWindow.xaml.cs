@@ -1,4 +1,5 @@
 using Microsoft.UI;
+using Microsoft.UI.Text;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -35,11 +36,13 @@ public sealed partial class MainWindow : Window
         SetTitleBar(titleBar);
 
         txtUrl.Text = Program.Url;
+        // The icon sits next to the exe, so it is loaded by path: ms-appx:/// points at a package
+        // folder this app does not have.
+        imgIcon.Source = new BitmapImage(new Uri(Path.Combine(AppContext.BaseDirectory, "BrowSel.ico")));
         ApplyText();
         Build();
 
-        // The About window would hold the app alive with no picker to click.
-        Closed += (_, _) => { _about?.Close(); Save(); };
+        Closed += (_, _) => Save();
         root.KeyDown += (_, e) => { if (e.Key == Windows.System.VirtualKey.Escape) Close(); };
         // The HWND only exists after Activate: that is why the size is set on the first real launch.
         Activated += First;
@@ -59,25 +62,89 @@ public sealed partial class MainWindow : Window
         lblEditor.Text = S.T("editor");
         lblLang.Text = S.T("langLabel");
         ToolTipService.SetToolTip(editorBox, S.T("editorTip"));
+
+        dlgAbout.CloseButtonText = S.T("close");
+        // Three parts: the assembly keeps a 0 revision, and 1.1 says nothing about which build this is.
+        lblVersion.Text = "v" + Update.Current.ToString(3);
+        btnUpdate.Content = S.T("checkUpdates");
+        BuildCredits();
     }
 
-    // The credits window, kept so closing the picker takes it with it: it would otherwise keep the
-    // app alive with nothing to pick.
-    AboutWindow? _about;
-
-    // Activate or it never shows: a WinUI window is invisible until it is activated. The settings
-    // dialog does not need this because it lives inside this window, it only needs ShowAsync.
-    void OnAboutClick(object sender, RoutedEventArgs e)
+    // Same components as THIRD_PARTY_NOTICES.txt, so the two cannot drift apart silently.
+    static readonly (string Name, string Url)[] Libraries =
     {
-        _about?.Close();
-        _about = new AboutWindow(Program.Owner);
-        _about.Activate();
+        ("Microsoft.WindowsAppSDK", "https://github.com/microsoft/WindowsAppSDK/blob/main/LICENSE"),
+        ("Microsoft.Windows.SDK.BuildTools", "https://github.com/microsoft/WindowsAppSDK-Samples/blob/main/LICENSE"),
+        ("System.Management", "https://github.com/dotnet/dotnet/blob/main/LICENSE.TXT"),
+    };
+
+    // The credits, built from code so every word goes through the translator.
+    void BuildCredits()
+    {
+        credits.Children.Clear();
+
+        void Section(string key, params UIElement[] items)
+        {
+            var box = new StackPanel { Spacing = 2 };
+            box.Children.Add(new TextBlock
+            {
+                Text = S.T(key),
+                Style = (Style)Application.Current.Resources["BodyStrongTextBlockStyle"],
+            });
+            foreach (var i in items) box.Children.Add(i);
+            credits.Children.Add(box);
+        }
+
+        HyperlinkButton Link(string text, string url)
+        {
+            var b = new HyperlinkButton { Content = text, FontSize = 13, Padding = new Thickness(0, 2, 0, 2) };
+            b.Click += (_, _) => Open(url);
+            return b;
+        }
+
+        TextBlock Plain(string text) => new() { Text = text, FontSize = 13 };
+
+        Section("developedBy", Link("NoCloudware", "https://www.nocloudware.com"));
+        Section("thirdParty", Libraries.Select(l => Link(l.Name, l.Url)).ToArray());
+        Section("technologies", Plain(".NET 10"), Plain("WinUI 3"), Plain("Inno Setup 6"));
+        Section("license", Plain("MIT"));
     }
 
-    void OnDonateClick(object sender, RoutedEventArgs e)
+    static void Open(string url)
     {
-        try { Discover.OpenPage("https://nocloudware.com/donate.html"); }
+        try { Discover.OpenPage(url); }
         catch (Exception ex) { Program.Error(ex); }
+    }
+
+    async void OnAboutClick(object sender, RoutedEventArgs e) => await dlgAbout.ShowAsync();
+
+    void OnDonateClick(object sender, RoutedEventArgs e) => Open("https://nocloudware.com/donate.html");
+
+    async void OnUpdateClick(object sender, RoutedEventArgs e)
+    {
+        btnUpdate.IsEnabled = false;
+        btnUpdate.Content = S.T("checking");
+        try
+        {
+            var found = await Update.FindAsync();
+            btnUpdate.IsEnabled = true;
+            btnUpdate.Content = S.T("checkUpdates");
+
+            if (found is null) { Program.Msg(S.T("upToDate")); return; }
+            if (!Program.Confirm(S.F("confirmUpdate", found.Value.Ver.ToString(2)))) return;
+
+            btnUpdate.Content = S.T("downloading");
+            await Update.InstallAsync(found.Value.Url);
+            dlgAbout.Hide(); // the helper takes over: it waits for us, swaps the file and starts it again
+        }
+        catch (Exception ex)
+        {
+            btnUpdate.IsEnabled = true;
+            btnUpdate.Content = S.T("checkUpdates");
+            // The real reason, not "check your internet": a download that failed looks identical
+            // from here and the guess sends us hunting for a network problem that did not exist.
+            Program.Error(ex);
+        }
     }
 
     void First(object sender, WindowActivatedEventArgs e)

@@ -66,7 +66,38 @@
                     <ComboBox x:Name="langBox" HorizontalAlignment="Stretch"
                               SelectionChanged="OnPreviewLang" />
                 </StackPanel>
-                
+            </StackPanel>
+        </ContentDialog>
+
+        <!-- The credits. A dialog and not a second window: a WinUI window is invisible until it is
+             activated, and it needs hand made modality on top of that. A dialog needs neither. -->
+        <ContentDialog x:Name="dlgAbout" MinWidth="400">
+            <StackPanel Spacing="16">
+                <!-- Logo, app name and version, with the update check beside the version -->
+                <Grid ColumnDefinitions="Auto,*" ColumnSpacing="15">
+                    <Border Grid.Column="0" Width="64" Height="64" CornerRadius="12"
+                            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1">
+                        <Image x:Name="imgIcon" Width="48" Height="48" />
+                    </Border>
+
+                    <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="4">
+                        <TextBlock Text="BrowSel" FontSize="24" FontWeight="SemiBold" />
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <TextBlock x:Name="lblVersion" FontSize="12" VerticalAlignment="Center"
+                                       Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                            <Button x:Name="btnUpdate" Click="OnUpdateClick" FontSize="12"
+                                    Padding="12,4" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </StackPanel>
+                </Grid>
+
+                <Rectangle Height="1" Fill="{ThemeResource DividerStrokeColorDefaultBrush}" />
+
+                <ScrollViewer MaxHeight="300" VerticalScrollBarVisibility="Auto"
+                              HorizontalScrollBarVisibility="Disabled">
+                    <StackPanel x:Name="credits" Spacing="14" />
+                </ScrollViewer>
             </StackPanel>
         </ContentDialog>
     </Grid>
