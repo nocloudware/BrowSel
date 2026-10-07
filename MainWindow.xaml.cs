@@ -65,8 +65,14 @@ public sealed partial class MainWindow : Window
     // app alive with nothing to pick.
     AboutWindow? _about;
 
-    void OnAboutClick(object sender, RoutedEventArgs e) =>
+    // Activate or it never shows: a WinUI window is invisible until it is activated. The settings
+    // dialog does not need this because it lives inside this window, it only needs ShowAsync.
+    void OnAboutClick(object sender, RoutedEventArgs e)
+    {
+        _about?.Close();
         _about = new AboutWindow(Program.Owner);
+        _about.Activate();
+    }
 
     void OnDonateClick(object sender, RoutedEventArgs e)
     {

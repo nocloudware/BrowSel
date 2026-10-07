@@ -5,6 +5,7 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
+using Microsoft.UI.Xaml.Media.Imaging;
 using Windows.Graphics;
 using Windows.UI;
 
@@ -41,6 +42,9 @@ public sealed partial class AboutWindow : Window
         EnableWindow(ownerHandle, false);
 
         SystemBackdrop = new MicaBackdrop();
+        // The icon sits next to the exe, so it is loaded by path: ms-appx:/// points at a package folder
+        // this app does not have.
+        imgIcon.Source = new BitmapImage(new Uri(Path.Combine(AppContext.BaseDirectory, "BrowSel.ico")));
         ApplyText();
 
         var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(this);
@@ -75,7 +79,8 @@ public sealed partial class AboutWindow : Window
 
     void ApplyText()
     {
-        lblVersion.Text = Update.Current.ToString(2);
+        // Three parts: the assembly keeps a 0 revision, and 1.1 says nothing about which build this is.
+        lblVersion.Text = "v" + Update.Current.ToString(3);
         btnUpdate.Content = S.T("checkUpdates");
         btnClose.Content = S.T("close");
         BuildCredits();
