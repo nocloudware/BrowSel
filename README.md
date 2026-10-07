@@ -6,7 +6,7 @@ Windows can only send a link to one program. BrowSel registers itself as the han
 `http`/`https` links and, when you click one, it shows your browsers and their profiles — with
 the ones already running marked — so you pick where the link goes.
 
-Requires Windows 11.
+Requires Windows 10 2004+ (19041) or Windows 11. On Windows 10, Mica backdrop falls back to solid color.
 
 
 <p align="center">
@@ -97,7 +97,7 @@ would see there.
 
 ## Limitations
 
-- Windows 11 only.
+- Windows 10 2004+ (19041) or Windows 11. On Windows 10, Mica backdrop falls back to solid color.
 - Open-profile detection is a heuristic, not official API. It can miss a profile, or report one as
   open after it closed.
 - Auto-update needs a GitHub release to exist. With none published, it always reports that you
