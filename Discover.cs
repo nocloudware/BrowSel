@@ -99,14 +99,24 @@ static class Discover
         var cur = new Dictionary<string, string>();
         string sec = "";
 
+        // Firefox keeps the names the user gave each profile in a per-group SQLite database, and
+        // leaves profiles.ini holding nothing but folder names. So the database goes first and its
+        // name wins: it is the same name the profile manager shows.
+        var named = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var (path, label) in GroupNames(Path.Combine(baseDir, "Profile Groups")))
+            named[Path.GetFullPath(Path.Combine(baseDir, path))] = label;
+
         void Add(string name, string full)
         {
+            full = Path.GetFullPath(full);
             if (result.Any(e => string.Equals(e.Dir, full, StringComparison.OrdinalIgnoreCase))) return;
-            var real = RealName(full);
+            var real = named.TryGetValue(full, out var label) ? label : RealName(full);
             // ponytail: if Firefox changes how parent.lock is taken, this stops seeing the open profile.
             bool open = IsLocked(Path.Combine(full, "parent.lock"));
             result.Add(new Entry(b, exe, full, $"{(real == "" ? name : real)}  (Firefox)", open, open ? S.T("whyLock") : ""));
         }
+
+        foreach (var (dir, label) in named) Add(label, dir);
 
         void Flush()
         {
@@ -136,9 +146,9 @@ static class Discover
         return result;
     }
 
-    // The name the user gave a profile, not the name of the folder it happens to sit in. Firefox
-    // keeps it in prefs.js as the shortcut it created for that profile; profiles.ini only has
-    // whatever name Firefox last wrote there, which is the technical one after a rewrite.
+    // The names Firefox shows in its own profile manager. Nothing else on disk carries them:
+    // profiles.ini has folder names, and prefs.js only has one for the profiles that happened to
+    // get a Start menu shortcut. Only used when the profile database has nothing to say.
     static string RealName(string profileDir)
     {
         var prefs = Path.Combine(profileDir, "prefs.js");
@@ -146,6 +156,68 @@ static class Discover
         var m = Regex.Match(File.ReadAllText(prefs),
             "^user_pref\\(\"browser\\.profiles\\.shortcutFileName\", \"([^\"]+)\"\\);", RegexOptions.Multiline);
         return m.Success ? Path.GetFileNameWithoutExtension(m.Groups[1].Value) : "";
+    }
+
+    static List<(string Path, string Name)> GroupNames(string groupsDir)
+    {
+        var rows = new List<(string, string)>();
+        if (!Directory.Exists(groupsDir)) return rows;
+        foreach (var db in Directory.EnumerateFiles(groupsDir, "*.sqlite"))
+        {
+            // A copy, so a running Firefox cannot block the read and a write ahead log left
+            // pending by a crash still gets replayed against it.
+            var tmp = Path.Combine(Path.GetTempPath(), "BrowSel-" + Path.GetFileName(db));
+            try
+            {
+                File.Copy(db, tmp, true);
+                if (File.Exists(db + "-wal")) File.Copy(db + "-wal", tmp + "-wal", true);
+                rows.AddRange(Sqlite.Select(tmp, "SELECT path, name FROM Profiles"));
+            }
+            catch (Exception) { }
+            finally { File.Delete(tmp); File.Delete(tmp + "-wal"); }
+        }
+        return rows;
+    }
+
+    // The SQLite that ships with Windows, so reading a profile database needs no package.
+    static class Sqlite
+    {
+        const int Row = 100, OpenReadWrite = 0x2, OpenCreate = 0x4;
+
+        [DllImport("winsqlite3.dll")] static extern int sqlite3_open_v2(byte[] f, out IntPtr db, int flags, IntPtr vfs);
+        [DllImport("winsqlite3.dll")] static extern int sqlite3_prepare_v2(IntPtr db, byte[] sql, int n, out IntPtr stmt, out IntPtr rest);
+        [DllImport("winsqlite3.dll")] static extern int sqlite3_step(IntPtr stmt);
+        [DllImport("winsqlite3.dll")] static extern int sqlite3_finalize(IntPtr stmt);
+        [DllImport("winsqlite3.dll")] static extern int sqlite3_close(IntPtr db);
+        [DllImport("winsqlite3.dll")] static extern IntPtr sqlite3_column_text(IntPtr stmt, int col);
+
+        static byte[] Utf8(string s) { var b = Encoding.UTF8.GetBytes(s); var r = new byte[b.Length + 1]; b.CopyTo(r, 0); return r; }
+        static string? Text(IntPtr stmt, int col)
+        {
+            var p = sqlite3_column_text(stmt, col);
+            return p == IntPtr.Zero ? null : Marshal.PtrToStringUTF8(p);
+        }
+
+        public static List<(string A, string B)> Select(string file, string sql)
+        {
+            var rows = new List<(string, string)>();
+            if (sqlite3_open_v2(Utf8(file), out var db, OpenReadWrite | OpenCreate, IntPtr.Zero) != 0) return rows;
+            try
+            {
+                if (sqlite3_prepare_v2(db, Utf8(sql), -1, out var st, out _) != 0) return rows;
+                try
+                {
+                    while (sqlite3_step(st) == Row)
+                    {
+                        var a = Text(st, 0); var b = Text(st, 1);
+                        if (a != null && b != null) rows.Add((a, b));
+                    }
+                }
+                finally { sqlite3_finalize(st); }
+            }
+            finally { sqlite3_close(db); }
+            return rows;
+        }
     }
 
     // ---------- Open-profile detection (Chromium) ----------
