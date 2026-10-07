@@ -8,7 +8,13 @@ the ones already running marked — so you pick where the link goes.
 
 Requires Windows 11.
 
-![The BrowSel picker showing browser profiles and the Editor and Copy actions](BrowSel.jpg)
+![The BrowSel picker showing browser profiles and the Editor and Copy actions](BrowSel-main.png)
+
+![Brave's expanded profile list in BrowSel](BrowSel-expanded.jpg)
+
+![BrowSel's Settings dialog with browser selection and language options](BrowSel-config.png)
+
+![BrowSel's About dialog showing the app icon, version, and credits](BrowSel-about.png)
 
 ## Features
 
@@ -42,7 +48,7 @@ That produces `dist\BrowSelSetup-<version>.exe`.
 
 ## Install
 
-Download `BrowSelSetup-1.1.7.exe` from the releases page and run it. It installs into
+Download `BrowSelSetup-1.1.8.exe` from the releases page and run it. It installs into
 `%LocalAppData%\Programs\BrowSel`, adds a Start menu entry and an entry in
 *Apps installed by Windows*, and registers BrowSel as a link handler.
 
