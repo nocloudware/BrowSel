@@ -9,9 +9,21 @@
     <Grid x:Name="root" RowDefinitions="Auto,Auto,*" Background="Transparent">
 
         <!-- Own, draggable title bar, in the style of Windows Settings -->
-        <Grid x:Name="titleBar" Height="48" Padding="16,0,12,0" ColumnDefinitions="*,Auto">
+        <Grid x:Name="titleBar" Height="48" Padding="16,0,12,0" ColumnDefinitions="*,Auto,Auto,Auto" ColumnSpacing="4">
             <TextBlock x:Name="titleText" Text="BrowSel" VerticalAlignment="Center" />
-            <Button x:Name="btnSettings" Grid.Column="1" VerticalAlignment="Center"
+            <Button x:Name="btnAbout" Grid.Column="1" VerticalAlignment="Center"
+                    Width="36" Height="36" Padding="0"
+                    Click="OnAboutClick"
+                    ToolTipService.ToolTip="About">
+                <FontIcon Glyph="&#xE946;" FontSize="16" />
+            </Button>
+            <Button x:Name="btnDonate" Grid.Column="2" VerticalAlignment="Center"
+                    Width="36" Height="36" Padding="0"
+                    Click="OnDonateClick"
+                    ToolTipService.ToolTip="Donate">
+                <FontIcon Glyph="&#xEB51;" FontSize="16" />
+            </Button>
+            <Button x:Name="btnSettings" Grid.Column="3" VerticalAlignment="Center"
                     Width="36" Height="36" Padding="0"
                     Click="OnSettingsClick"
                     ToolTipService.ToolTip="Settings">
@@ -54,8 +66,7 @@
                     <ComboBox x:Name="langBox" HorizontalAlignment="Stretch"
                               SelectionChanged="OnPreviewLang" />
                 </StackPanel>
-                <Button x:Name="btnUpdate" HorizontalAlignment="Stretch"
-                        HorizontalContentAlignment="Center" Click="OnUpdateClick" />
+                
             </StackPanel>
         </ContentDialog>
     </Grid>

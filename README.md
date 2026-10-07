@@ -42,7 +42,7 @@ That produces `dist\BrowSelSetup-<version>.exe`.
 
 ## Install
 
-Download `BrowSelSetup-1.1.5.exe` from the releases page and run it. It installs into
+Download `BrowSelSetup-1.1.7.exe` from the releases page and run it. It installs into
 `%LocalAppData%\Programs\BrowSel`, adds a Start menu entry and an entry in
 *Apps installed by Windows*, and registers BrowSel as a link handler.
 

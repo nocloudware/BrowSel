@@ -38,7 +38,8 @@ public sealed partial class MainWindow : Window
         ApplyText();
         Build();
 
-        Closed += (_, _) => Save();
+        // The About window would hold the app alive with no picker to click.
+        Closed += (_, _) => { _about?.Close(); Save(); };
         root.KeyDown += (_, e) => { if (e.Key == Windows.System.VirtualKey.Escape) Close(); };
         // The HWND only exists after Activate: that is why the size is set on the first real launch.
         Activated += First;
@@ -50,42 +51,27 @@ public sealed partial class MainWindow : Window
         txtPick.Text = S.T("pickTitle");
         empty.Text = S.T("empty");
         ToolTipService.SetToolTip(btnSettings, S.T("settings"));
+        ToolTipService.SetToolTip(btnAbout, S.T("about"));
+        ToolTipService.SetToolTip(btnDonate, S.T("donate"));
         dlgSettings.Title = S.T("dialogTitle");
         dlgSettings.PrimaryButtonText = S.T("save");
         dlgSettings.CloseButtonText = S.T("cancel");
-        btnUpdate.Content = S.T("checkUpdates");
         lblEditor.Text = S.T("editor");
         lblLang.Text = S.T("langLabel");
         ToolTipService.SetToolTip(editorBox, S.T("editorTip"));
     }
 
-    // Looks at the repo releases and, if there is a newer one, asks before installing it.
-    async void OnUpdateClick(object sender, RoutedEventArgs e)
+    // The credits window, kept so closing the picker takes it with it: it would otherwise keep the
+    // app alive with nothing to pick.
+    AboutWindow? _about;
+
+    void OnAboutClick(object sender, RoutedEventArgs e) =>
+        _about = new AboutWindow(Program.Owner);
+
+    void OnDonateClick(object sender, RoutedEventArgs e)
     {
-        btnUpdate.IsEnabled = false;
-        btnUpdate.Content = S.T("checking");
-        try
-        {
-            var found = await Update.FindAsync();
-            btnUpdate.IsEnabled = true;
-            btnUpdate.Content = S.T("checkUpdates");
-
-            if (found is null) { Program.Msg(S.T("upToDate")); return; }
-
-            if (!Program.Confirm(S.F("confirmUpdate", found.Value.Ver.ToString(2)))) return;
-
-            btnUpdate.Content = S.T("downloading");
-            await Update.InstallAsync(found.Value.Url);
-            Close(); // the helper takes over: it waits for us, swaps the file and starts it again
-        }
-        catch (Exception ex)
-        {
-            btnUpdate.IsEnabled = true;
-            btnUpdate.Content = S.T("checkUpdates");
-            // The real reason, not "check your internet": a download that failed looks identical
-            // from here and the guess sent us hunting for a network problem that did not exist.
-            Program.Error(ex);
-        }
+        try { Discover.OpenPage("https://nocloudware.com/donate.html"); }
+        catch (Exception ex) { Program.Error(ex); }
     }
 
     void First(object sender, WindowActivatedEventArgs e)

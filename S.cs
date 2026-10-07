@@ -79,7 +79,14 @@ static class S
             ["checking"] = "Checking...",
             ["upToDate"] = "You already have the latest version.",
             ["confirmUpdate"] = "Do you want to install v{0}?",
-            ["downloading"] = "Downloading..."
+            ["downloading"] = "Downloading...",
+            ["about"] = "About",
+            ["donate"] = "Donate",
+            ["close"] = "Close",
+            ["developedBy"] = "Developed by",
+            ["thirdParty"] = "Third-party components",
+            ["technologies"] = "Technologies used",
+            ["license"] = "License"
         },
         ["es"] = new()
         {
@@ -113,7 +120,14 @@ static class S
             ["checking"] = "Buscando...",
             ["upToDate"] = "Ya tienes la última versión.",
             ["confirmUpdate"] = "¿Desea instalar la v{0}?",
-            ["downloading"] = "Descargando..."
+            ["downloading"] = "Descargando...",
+            ["about"] = "Acerca de",
+            ["donate"] = "Donar",
+            ["close"] = "Cerrar",
+            ["developedBy"] = "Desarrollado por",
+            ["thirdParty"] = "Componentes de terceros",
+            ["technologies"] = "Tecnologías usadas",
+            ["license"] = "Licencia"
         },
         ["fr"] = new()
         {
@@ -147,7 +161,14 @@ static class S
             ["checking"] = "Recherche...",
             ["upToDate"] = "Vous avez déjà la dernière version.",
             ["confirmUpdate"] = "Voulez-vous installer la v{0} ?",
-            ["downloading"] = "Téléchargement..."
+            ["downloading"] = "Téléchargement...",
+            ["about"] = "À propos",
+            ["donate"] = "Faire un don",
+            ["close"] = "Fermer",
+            ["developedBy"] = "Développé par",
+            ["thirdParty"] = "Composants tiers",
+            ["technologies"] = "Technologies utilisées",
+            ["license"] = "Licence"
         },
         ["ru"] = new()
         {
@@ -181,7 +202,14 @@ static class S
             ["checking"] = "Проверка...",
             ["upToDate"] = "У вас уже последняя версия.",
             ["confirmUpdate"] = "Установить версию {0}?",
-            ["downloading"] = "Загрузка..."
+            ["downloading"] = "Загрузка...",
+            ["about"] = "О программе",
+            ["donate"] = "Пожертвовать",
+            ["close"] = "Закрыть",
+            ["developedBy"] = "Разработчик",
+            ["thirdParty"] = "Сторонние компоненты",
+            ["technologies"] = "Использованные технологии",
+            ["license"] = "Лицензия"
         },
         ["zh"] = new()
         {
@@ -215,7 +243,14 @@ static class S
             ["checking"] = "正在检查...",
             ["upToDate"] = "你已经是最新版本。",
             ["confirmUpdate"] = "要安装 {0} 吗？",
-            ["downloading"] = "正在下载..."
+            ["downloading"] = "正在下载...",
+            ["about"] = "关于",
+            ["donate"] = "捐赠",
+            ["close"] = "关闭",
+            ["developedBy"] = "开发者",
+            ["thirdParty"] = "第三方组件",
+            ["technologies"] = "使用的技术",
+            ["license"] = "许可证"
         },
         ["ja"] = new()
         {
@@ -249,7 +284,14 @@ static class S
             ["checking"] = "確認中...",
             ["upToDate"] = "すでに最新バージョンです。",
             ["confirmUpdate"] = "バージョン {0} をインストールしますか？",
-            ["downloading"] = "ダウンロード中..."
+            ["downloading"] = "ダウンロード中...",
+            ["about"] = "情報",
+            ["donate"] = "寄付",
+            ["close"] = "閉じる",
+            ["developedBy"] = "開発",
+            ["thirdParty"] = "サードパーティコンポーネント",
+            ["technologies"] = "使用技術",
+            ["license"] = "ライセンス"
         },
         ["pt"] = new()
         {
@@ -283,7 +325,14 @@ static class S
             ["checking"] = "Verificando...",
             ["upToDate"] = "Você já tem a versão mais recente.",
             ["confirmUpdate"] = "Deseja instalar a v{0}?",
-            ["downloading"] = "Baixando..."
+            ["downloading"] = "Baixando...",
+            ["about"] = "Sobre",
+            ["donate"] = "Doar",
+            ["close"] = "Fechar",
+            ["developedBy"] = "Desenvolvido por",
+            ["thirdParty"] = "Componentes de terceiros",
+            ["technologies"] = "Tecnologias usadas",
+            ["license"] = "Licença"
         },
         ["hi"] = new()
         {
@@ -317,7 +366,14 @@ static class S
             ["checking"] = "जाँच हो रही है...",
             ["upToDate"] = "आपके पास पहले से नवीनतम संस्करण है।",
             ["confirmUpdate"] = "क्या आप v{0} इंस्टॉल करना चाहते हैं?",
-            ["downloading"] = "डाउनलोड हो रहा है..."
+            ["downloading"] = "डाउनलोड हो रहा है...",
+            ["about"] = "परिचय",
+            ["donate"] = "दान करें",
+            ["close"] = "बंद करें",
+            ["developedBy"] = "निर्माता",
+            ["thirdParty"] = "तृतीय-पक्ष घटक",
+            ["technologies"] = "उपयोग की गई तकनीकें",
+            ["license"] = "लाइसेंस"
         },
         ["ar"] = new()
         {
@@ -351,7 +407,14 @@ static class S
             ["checking"] = "جارٍ التحقق...",
             ["upToDate"] = "لديك أحدث إصدار بالفعل.",
             ["confirmUpdate"] = "هل تريد تثبيت الإصدار {0}؟",
-            ["downloading"] = "جارٍ التنزيل..."
+            ["downloading"] = "جارٍ التنزيل...",
+            ["about"] = "حول",
+            ["donate"] = "تبرع",
+            ["close"] = "إغلاق",
+            ["developedBy"] = "طوّر بواسطة",
+            ["thirdParty"] = "مكونات الطرف الثالث",
+            ["technologies"] = "التقنيات المستخدمة",
+            ["license"] = "الترخيص"
         },
         ["bn"] = new()
         {
@@ -385,7 +448,14 @@ static class S
             ["checking"] = "পরীক্ষা হচ্ছে...",
             ["upToDate"] = "আপনার কাছেই সর্বশেষ সংস্করণ আছে।",
             ["confirmUpdate"] = "আপনি কি v{0} ইনস্টল করতে চান?",
-            ["downloading"] = "ডাউনলোড হচ্ছে..."
+            ["downloading"] = "ডাউনলোড হচ্ছে...",
+            ["about"] = "পরিচিতি",
+            ["donate"] = "দান করুন",
+            ["close"] = "বন্ধ করুন",
+            ["developedBy"] = "উন্নয়নকারী",
+            ["thirdParty"] = "তৃতীয় পক্ষের উপাদান",
+            ["technologies"] = "ব্যবহৃত প্রযুক্তি",
+            ["license"] = "লাইসেন্স"
         },
     };
 }

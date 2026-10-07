@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Window
+    x:Class="BrowSel.AboutWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    Title="BrowSel">
+
+    <Grid x:Name="root" RowDefinitions="Auto,Auto,*,Auto" Padding="20,16"
+          Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+
+        <!-- Logo, app name and version, with the update check beside the version -->
+        <Grid Grid.Row="0" ColumnDefinitions="Auto,*" ColumnSpacing="15" Margin="0,0,0,16">
+            <Border Grid.Column="0" Width="64" Height="64" CornerRadius="12"
+                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1">
+                <BitmapIcon UriSource="ms-appx:///BrowSel.ico" Width="48" Height="48" />
+            </Border>
+
+            <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
+                <TextBlock Text="BrowSel" FontSize="24" FontWeight="SemiBold" />
+                <StackPanel Orientation="Horizontal" Spacing="4">
+                    <TextBlock x:Name="lblVersion" FontSize="12" VerticalAlignment="Center"
+                               Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                    <Button x:Name="btnUpdate" Click="OnUpdateClick" FontSize="12"
+                            Padding="8,2" HorizontalAlignment="Left"
+                            Background="Transparent" BorderThickness="0" />
+                </StackPanel>
+            </StackPanel>
+        </Grid>
+
+        <Rectangle Grid.Row="1" Height="1" Margin="0,0,0,16"
+                   Fill="{ThemeResource DividerStrokeColorDefaultBrush}" />
+
+        <!-- Credits, built from code so every word goes through the translator -->
+        <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto"
+                      HorizontalScrollBarVisibility="Disabled">
+            <StackPanel x:Name="credits" Spacing="14" />
+        </ScrollViewer>
+
+        <Button Grid.Row="3" x:Name="btnClose" Click="OnCloseClick" Style="{StaticResource AccentButtonStyle}"
+                HorizontalAlignment="Right" Padding="20,8" Margin="0,16,0,0" />
+    </Grid>
+</Window>

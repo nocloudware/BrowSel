@@ -293,6 +293,22 @@ static class Discover
         catch { return false; }
     }
 
+    // The app's own links, opened in a browser directly instead of through the shell. The shell
+    // sends https back to whoever handles it, and when that is BrowSel the user gets a second
+    // picker stacked on the first one instead of the page. Same exe lookup as the picker, so the
+    // link opens in one of the browsers already on screen.
+    public static void OpenPage(string url)
+    {
+        foreach (var b in Browsers)
+        {
+            var exe = FindExe(b);
+            if (exe == null) continue;
+            Process.Start(new ProcessStartInfo(exe) { UseShellExecute = false, ArgumentList = { url } })?.Dispose();
+            return;
+        }
+        Process.Start(new ProcessStartInfo(url) { UseShellExecute = true })?.Dispose();
+    }
+
     public static void Launch(Entry e, string url)
     {
         var psi = new ProcessStartInfo(e.Exe) { UseShellExecute = false };
