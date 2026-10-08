@@ -1,11 +1,14 @@
 ; BrowSel installer.
 ;
-; Installs per user, into a fixed folder the app owns: the self updater overwrites that folder in
-; place, so it must be writable without asking for administrator rights. Same reason it does not go
-; to Program Files.
+; Installs per user, into a fixed folder the app owns, so it can be written without asking for
+; administrator rights; same reason it does not go to Program Files. The in-app updater downloads
+; this installer, verifies its SHA256 and runs it, so this script (not the app) is what closes a
+; running BrowSel and replaces the files.
 
 #define AppName "BrowSel"
-#define AppVersion "1.1.8"
+#ifndef AppVersion
+  #define AppVersion "1.1.8"
+#endif
 #define AppExeName "BrowSel.exe"
 
 [Setup]
@@ -27,6 +30,8 @@ ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
 PrivilegesRequired=lowest
 DisableDirPage=no
+CloseApplications=yes
+RestartApplications=no
 
 [Languages]
 Name: "english"; MessagesFile: "compiler:Default.isl"
