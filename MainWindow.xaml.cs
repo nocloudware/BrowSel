@@ -22,6 +22,7 @@ public sealed partial class MainWindow : Window
     readonly List<(int Index, string Exe, Image Img)> _editorIcons = new();
     readonly Dictionary<string, BitmapSource> _icons = new();
     Settings _cfg = Settings.Load(Discover.Browsers);
+    int _gen;
 
     public MainWindow()
     {
@@ -166,6 +167,7 @@ public sealed partial class MainWindow : Window
     // Redraws the whole tree from scratch: used at start and every time settings are confirmed.
     void Rebuild()
     {
+        _gen++;
         _rows.Clear();
         tree.Visibility = Visibility.Visible;
         empty.Visibility = Visibility.Collapsed;
@@ -178,7 +180,7 @@ public sealed partial class MainWindow : Window
         foreach (var b in Discover.Browsers.Where(b => _cfg.Browsers.Contains(b.Name) && Discover.FindExe(b) != null))
         {
             List<Entry> list;
-            try { list = Discover.Load(b); } catch { list = new(); } // one broken browser must not take the picker down
+            try { list = Discover.Load(b, detect: false); } catch { list = new(); } // one broken browser must not take the picker down
 
             var row = new Row { Name = b.Name, Expanded = _cfg.Expanded.Contains(b.Name) };
         foreach (var e in list.OrderBy(x => x.Label))
@@ -202,6 +204,36 @@ public sealed partial class MainWindow : Window
         else _ = LoadIcons();
 
         Reflow();
+        _ = RefreshOpenAsync();
+    }
+
+    // Second phase of Build(): the slow part (WMI snapshot, window titles) runs off the UI thread and
+    // the green dots appear when it finishes. A newer Build() makes this result stale.
+    async Task RefreshOpenAsync()
+    {
+        var gen = ++_gen;
+        var todo = Discover.Browsers
+            .Where(b => b.Kind == Kind.Chromium && _cfg.Browsers.Contains(b.Name) && Discover.FindExe(b) != null)
+            .ToList();
+        if (todo.Count == 0) return;
+
+        var fresh = await Task.Run(() =>
+        {
+            var d = new Dictionary<string, List<Entry>>();
+            foreach (var b in todo)
+                try { d[b.Name] = Discover.Load(b, detect: true); } catch { }
+            return d;
+        });
+        if (gen != _gen) return;
+
+        foreach (var head in _rows.Where(r => r.Name != null && fresh.ContainsKey(r.Name)))
+            foreach (var kid in head.Kids.Where(k => k.Entry != null))
+            {
+                var hit = fresh[head.Name!].FirstOrDefault(e =>
+                    string.Equals(e.Dir, kid.Entry!.Dir, StringComparison.OrdinalIgnoreCase));
+                if (hit != null) kid.Entry = kid.Entry! with { Open = hit.Open, Why = hit.Why };
+            }
+        Reflow(); // posted from the async continuation, not from SelectionChanged: safe for the TreeView
     }
 
     static Brush Open() => Application.Current.RequestedTheme == ApplicationTheme.Dark

@@ -40,15 +40,19 @@ static class Discover
 
     // One single WMI query for every browser, shared by the whole picker
     static List<Proc>? _snap;
+    static readonly object SnapLock = new();
     static List<Proc> Snapshot()
     {
-        if (_snap != null) return _snap;
-        var where = string.Join(" OR ", Browsers.Select(b => $"Name='{b.ExeName}'"));
-        var list = new List<Proc>();
-        using var s = new ManagementObjectSearcher($"SELECT Name, ProcessId, CommandLine FROM Win32_Process WHERE {where}");
-        foreach (ManagementObject o in s.Get())
-            using (o) list.Add(new Proc((string)o["Name"], (uint)o["ProcessId"], o["CommandLine"] as string ?? ""));
-        return _snap = list;
+        lock (SnapLock)
+        {
+            if (_snap != null) return _snap;
+            var where = string.Join(" OR ", Browsers.Select(b => $"Name='{b.ExeName}'"));
+            var list = new List<Proc>();
+            using var s = new ManagementObjectSearcher($"SELECT Name, ProcessId, CommandLine FROM Win32_Process WHERE {where}");
+            foreach (ManagementObject o in s.Get())
+                using (o) list.Add(new Proc((string)o["Name"], (uint)o["ProcessId"], o["CommandLine"] as string ?? ""));
+            return _snap = list;
+        }
     }
 
     public static string? FindExe(Browser b)
@@ -62,28 +66,30 @@ static class Discover
         return null;
     }
 
-    public static List<Entry> Load(Browser b)
+    public static List<Entry> Load(Browser b, bool detect = true)
     {
         var exe = FindExe(b);
         if (exe == null || !File.Exists(b.Data)) return new();
-        return b.Kind == Kind.Firefox ? LoadFirefox(b, exe) : LoadChromium(b, exe);
+        return b.Kind == Kind.Firefox ? LoadFirefox(b, exe) : LoadChromium(b, exe, detect);
     }
 
-    static List<Entry> LoadChromium(Browser b, string exe)
+    static List<Entry> LoadChromium(Browser b, string exe, bool detect)
     {
         using var doc = JsonDocument.Parse(File.ReadAllText(b.Data));
         if (!doc.RootElement.TryGetProperty("profile", out var profile) ||
             !profile.TryGetProperty("info_cache", out var cache) || cache.ValueKind != JsonValueKind.Object)
         {
             // No profile list (e.g. Opera): a single entry
-            bool run = Snapshot().Any(p => p.Name.Equals(b.ExeName, StringComparison.OrdinalIgnoreCase) && !p.Cmd.Contains("--type="));
+            bool run = detect && Snapshot().Any(p => p.Name.Equals(b.ExeName, StringComparison.OrdinalIgnoreCase) && !p.Cmd.Contains("--type="));
             return new() { new Entry(b, exe, "", S.F("singleProfile", b.Name), run, run ? S.T("whyProcess") : "") };
         }
 
         var names = cache.EnumerateObject().ToDictionary(
             p => p.Name,
             p => p.Value.TryGetProperty("name", out var n) ? n.GetString() ?? p.Name : p.Name);
-        var open = ChromiumOpen(b, exe, profile, names);
+        var open = detect
+            ? ChromiumOpen(b, exe, profile, names)
+            : new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
 
         return names.Select(kv =>
         {
