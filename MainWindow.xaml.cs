@@ -131,11 +131,12 @@ public sealed partial class MainWindow : Window
             btnUpdate.Content = S.T("checkUpdates");
 
             if (found is null) { Program.Msg(S.T("upToDate")); return; }
-            if (!Program.Confirm(S.F("confirmUpdate", found.Value.Ver.ToString(2)))) return;
+            if (!Program.Confirm(S.F("confirmUpdate", found.Ver.ToString(3)))) return; // 3 parts: 1.1.9, not 1.1
 
             btnUpdate.Content = S.T("downloading");
-            await Update.InstallAsync(found.Value.Url);
-            dlgAbout.Hide(); // the helper takes over: it waits for us, swaps the file and starts it again
+            await Update.InstallAsync(found);
+            dlgAbout.Hide();
+            Application.Current.Exit(); // Inno replaces our files; it must not find us running
         }
         catch (Exception ex)
         {

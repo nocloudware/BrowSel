@@ -50,6 +50,7 @@ internal static IntPtr Owner;
             !url.StartsWith("https://", StringComparison.OrdinalIgnoreCase)) return;
 
         Url = url;
+        Update.CleanTemp();
         WinRT.ComWrappersSupport.InitializeComWrappers();
         Application.Start(p =>
         {

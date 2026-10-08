@@ -1,12 +1,24 @@
 using System.Diagnostics;
+using System.Security.Cryptography;
 using System.Text.Json;
 
-// Checks the project's GitHub releases and, when there is a newer one, downloads it and swaps it in.
-// ponytail: no installer, no auto-updater library. The swap is handed to a hidden PowerShell because a
-// running exe cannot overwrite itself; if the download fails nothing on disk changes.
+// Checks the project's GitHub releases and, when there is a newer one, downloads the Inno Setup
+// installer, verifies its SHA256 and runs it silently. Inno closes this app and replaces the files.
+// No hash published = no update: a failed check is safer than running an unchecked exe.
 static class Update
 {
     const string Api = "https://api.github.com/repos/nocloudware/BrowSel/releases/latest";
+    const string SetupPrefix = "BrowSelSetup";
+
+    internal sealed record Release(Version Ver, string Url, string Sha256);
+
+    static readonly HttpClient Http = NewClient();
+    static HttpClient NewClient()
+    {
+        var h = new HttpClient { Timeout = TimeSpan.FromMinutes(10) };
+        h.DefaultRequestHeaders.UserAgent.ParseAdd("BrowSel");
+        return h;
+    }
 
     internal static Version Current
     {
@@ -17,73 +29,83 @@ static class Update
         }
     }
 
-    // Newest release newer than the running one, or null when there is none (or the call failed).
-    internal static async Task<(Version Ver, string Url)?> FindAsync()
+    // Newest release newer than the running one, or null (none, offline, no checksum, malformed).
+    internal static async Task<Release?> FindAsync()
     {
         try
         {
-            using var http = new HttpClient { Timeout = TimeSpan.FromSeconds(20) };
-            http.DefaultRequestHeaders.UserAgent.ParseAdd("BrowSel");
+            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(20));
+            using var json = JsonDocument.Parse(await Http.GetStringAsync(Api, cts.Token));
+            var root = json.RootElement;
 
-            using var json = JsonDocument.Parse(await http.GetStringAsync(Api));
-            var ver = Parse(json.RootElement.GetProperty("tag_name").GetString());
+            var ver = UpdateParsing.ParseVersion(root.GetProperty("tag_name").GetString());
             if (ver == null || ver <= Current) return null;
 
-            foreach (var a in json.RootElement.GetProperty("assets").EnumerateArray())
+            string? url = null, hash = null, sidecar = null;
+            foreach (var a in root.GetProperty("assets").EnumerateArray())
             {
                 var name = a.GetProperty("name").GetString() ?? "";
-                if (name.EndsWith(".zip", StringComparison.OrdinalIgnoreCase) ||
-                    name.EndsWith(".exe", StringComparison.OrdinalIgnoreCase))
-                    return (ver, a.GetProperty("browser_download_url").GetString()!);
+                var dl = a.GetProperty("browser_download_url").GetString();
+                if (!name.StartsWith(SetupPrefix, StringComparison.OrdinalIgnoreCase)) continue;
+
+                if (name.EndsWith(".exe", StringComparison.OrdinalIgnoreCase))
+                {
+                    url = dl;
+                    if (a.TryGetProperty("digest", out var d) && d.GetString() is { } s &&
+                        s.StartsWith("sha256:", StringComparison.OrdinalIgnoreCase))
+                        hash = UpdateParsing.ParseHash(s[7..]);
+                }
+                else if (name.EndsWith(".exe.sha256", StringComparison.OrdinalIgnoreCase)) sidecar = dl;
             }
 
-            return null;
+            if (url == null) return null;
+            if (hash == null && sidecar != null)
+                hash = UpdateParsing.ParseHash(await Http.GetStringAsync(sidecar, cts.Token));
+            return hash == null ? null : new Release(ver, url, hash);
         }
-        catch { return null; } // offline, rate limited, malformed json: treat as "nothing to offer"
+        catch { return null; } // offline, rate limited, malformed json: nothing to offer
     }
 
-    // The release asset is the Inno Setup installer. It is downloaded next to us and run silently once
-    // we exit: it puts the new files in place over the current install and registers itself.
-    internal static async Task InstallAsync(string url)
+    // Downloads to a unique temp folder, verifies the hash, starts the installer. The caller must
+    // exit the app right after: Inno would otherwise have to close it.
+    internal static async Task InstallAsync(Release r)
     {
-        var exe = Environment.ProcessPath ?? throw new InvalidOperationException("no exe path");
-        var folder = AppContext.BaseDirectory;
-        var setup = Path.Combine(folder, "browsel-update.exe");
-        var script = Path.Combine(folder, "browsel-update.ps1");
+        var dir = Path.Combine(Path.GetTempPath(), "BrowSel-update-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(dir);
+        var setup = Path.Combine(dir, "BrowSelSetup.exe");
 
-        using (var http = new HttpClient { Timeout = TimeSpan.FromMinutes(10) })
-        using (var src = await http.GetStreamAsync(url))
-        using (var dst = File.Create(setup))
-            await src.CopyToAsync(dst);
-
-        File.WriteAllText(script, $@"
-$setup = '{setup}'
-$dir = '{folder}'
-$me = '{script}'
-$exe = '{exe}'
-while (Get-Process -Id {Environment.ProcessId} -EA SilentlyContinue) {{ Start-Sleep -Milliseconds 300 }}
-Start-Process $setup -ArgumentList '/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART','/SP-' -Wait
-Start-Process $exe
-Remove-Item -LiteralPath $setup, $me -Force -EA SilentlyContinue
-");
-
-        Process.Start(new ProcessStartInfo("powershell.exe",
-            $"-NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File \"{script}\"")
-        { UseShellExecute = false })?.Dispose();
-    }
-
-    static Version? Parse(string? tag)
-    {
-        if (tag == null) return null;
-        var t = tag.TrimStart('v', 'V');
-        var parts = t.Split('.');
-        var nums = new List<int>();
-        foreach (var p in parts.Take(3))
+        try
         {
-            var digits = new string(p.TakeWhile(char.IsAsciiDigit).ToArray());
-            if (!int.TryParse(digits, out var n)) break;
-            nums.Add(n);
+            using (var src = await Http.GetStreamAsync(r.Url))
+            using (var dst = File.Create(setup))
+                await src.CopyToAsync(dst);
+
+            string actual;
+            using (var f = File.OpenRead(setup))
+                actual = Convert.ToHexString(await SHA256.HashDataAsync(f));
+            if (!actual.Equals(r.Sha256, StringComparison.OrdinalIgnoreCase))
+                throw new InvalidOperationException("The downloaded installer does not match its published SHA256. Update cancelled.");
+
+            var psi = new ProcessStartInfo(setup) { UseShellExecute = false };
+            foreach (var a in new[] { "/SILENT", "/SUPPRESSMSGBOXES", "/NORESTART", "/CLOSEAPPLICATIONS", "/SP-" })
+                psi.ArgumentList.Add(a);
+            Process.Start(psi)?.Dispose();
         }
-        return nums.Count == 0 ? null : new Version(nums[0], nums.Count > 1 ? nums[1] : 0, nums.Count > 2 ? nums[2] : 0);
+        catch
+        {
+            try { Directory.Delete(dir, true); } catch { }
+            throw;
+        }
+    }
+
+    // Installer folders left by earlier updates (the installer cannot delete itself while running).
+    internal static void CleanTemp()
+    {
+        try
+        {
+            foreach (var d in Directory.EnumerateDirectories(Path.GetTempPath(), "BrowSel-update-*"))
+                if (Directory.GetCreationTimeUtc(d) < DateTime.UtcNow.AddDays(-1)) Directory.Delete(d, true);
+        }
+        catch { }
     }
 }
