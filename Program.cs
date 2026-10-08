@@ -51,6 +51,7 @@ internal static IntPtr Owner;
 
         Url = url;
         Update.CleanTemp();
+        Editors.CleanTemp();
         WinRT.ComWrappersSupport.InitializeComWrappers();
         Application.Start(p =>
         {

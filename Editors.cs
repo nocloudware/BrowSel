@@ -86,17 +86,40 @@ static class Editors
         return end > 0 ? c[1..end] : c.Trim('"');
     }
 
-    // The link is written to a real file and opened with the editor through the shell verb: that is
-    // the only way that works for Store apps, and the text is already there instead of to be pasted.
+    // The link goes into a real file, opened by the chosen editor's own executable. If the editor
+    // cannot be found (or fails to start) the shell's default for .txt is used instead.
     internal static void Open(string id, string text)
     {
-        var file = Path.Combine(Path.GetTempPath(), "BrowSel-link.txt");
+        var dir = Path.Combine(Path.GetTempPath(), "BrowSel");
+        Directory.CreateDirectory(dir);
+        var file = Path.Combine(dir, $"link-{Guid.NewGuid():N}.txt");
         File.WriteAllText(file, text);
 
-        var psi = new ProcessStartInfo(file) { UseShellExecute = true };
-        if (id.Length > 0) psi.Verb = id;
+        var ed = All().FirstOrDefault(e => string.Equals(e.Id, id, StringComparison.OrdinalIgnoreCase));
+        if (ed != null)
+        {
+            try
+            {
+                var psi = new ProcessStartInfo(ed.Exe) { UseShellExecute = false };
+                psi.ArgumentList.Add(file);
+                Process.Start(psi)?.Dispose();
+                return;
+            }
+            catch { /* fall through to the default */ }
+        }
+        Process.Start(new ProcessStartInfo(file) { UseShellExecute = true })?.Dispose();
+    }
 
-        try { Process.Start(psi)?.Dispose(); }
-        catch { Process.Start(new ProcessStartInfo(file) { UseShellExecute = true })?.Dispose(); }
+    // One file per click; the editor may still have it open, so only old ones are removed.
+    internal static void CleanTemp()
+    {
+        try
+        {
+            var dir = Path.Combine(Path.GetTempPath(), "BrowSel");
+            if (!Directory.Exists(dir)) return;
+            foreach (var f in Directory.EnumerateFiles(dir, "link-*.txt"))
+                if (File.GetCreationTimeUtc(f) < DateTime.UtcNow.AddDays(-1)) File.Delete(f);
+        }
+        catch { }
     }
 }
