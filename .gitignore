@@ -6,6 +6,18 @@ out/
 out-rel/
 dist/
 
+# Test runs
+TestResults/
+*.trx
+
+# WinUI packaging intermediates (only created by Visual Studio packaging)
+AppPackages/
+BundleArtifacts/
+Generated Files/
+*.appx
+*.msix
+*.msixbundle
+
 .vs/
 .idea/
 *.user
