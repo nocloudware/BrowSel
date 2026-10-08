@@ -82,8 +82,9 @@ internal static IntPtr Owner;
 
         using (var k = Registry.CurrentUser.CreateSubKey($@"Software\Classes\{prog}"))
         {
-            k.SetValue("", "BrowSel URL");
+            k.SetValue("", "URL:BrowSelURL");
             k.SetValue("URL Protocol", "");
+            using (var i = k.CreateSubKey("DefaultIcon")) i.SetValue("", $"\"{exe}\",0");
             using var c = k.CreateSubKey(@"shell\open\command");
             c.SetValue("", $"\"{exe}\" \"%1\"");
         }
@@ -91,6 +92,7 @@ internal static IntPtr Owner;
         {
             k.SetValue("ApplicationName", "BrowSel");
             k.SetValue("ApplicationDescription", S.T("appDescription"));
+            k.SetValue("AppPath", exe);
             using var u = k.CreateSubKey("URLAssociations");
             u.SetValue("http", prog);
             u.SetValue("https", prog);
@@ -98,7 +100,7 @@ internal static IntPtr Owner;
         using (var k = Registry.CurrentUser.CreateSubKey(@"Software\RegisteredApplications"))
             k.SetValue("BrowSel", $@"{app}\Capabilities");
 
-        Process.Start(new ProcessStartInfo("ms-settings:defaultapps") { UseShellExecute = true })?.Dispose();
+        Process.Start(new ProcessStartInfo("ms-settings:defaultapps?registeredAppUser=BrowSel") { UseShellExecute = true })?.Dispose();
         Msg(S.T("registered"));
     }
 
