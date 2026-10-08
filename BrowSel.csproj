@@ -22,6 +22,8 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <!-- The test project lives in this folder: it must not be compiled into the app. -->
+    <Compile Remove="BrowSel.Tests\**" />
     <Content Include="Assets\*.png" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
     <!-- The About window draws the icon from ms-appx://, which needs the file next to the app. -->
     <Content Include="BrowSel.ico" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
