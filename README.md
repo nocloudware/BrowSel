@@ -10,13 +10,13 @@ Requires Windows 10 2004+ (19041) or Windows 11. On Windows 10, Mica backdrop fa
 
 
 <p align="center">
-  <br>BrowSel picker<br><img src="BrowSel-main.png" width="33%" alt="The BrowSel picker showing browser profiles and the Editor and Copy actions">
+  <br>BrowSel picker<br><img src="docs/BrowSel-main.png" width="33%" alt="The BrowSel picker showing browser profiles and the Editor and Copy actions">
   <br>Expanded profile list<br>
-  <img src="BrowSel-expanded.jpg" width="33%" alt="Brave's expanded profile list in BrowSel">
+  <img src="docs/BrowSel-expanded.jpg" width="33%" alt="Brave's expanded profile list in BrowSel">
   <br>Settings dialog<br>
-  <img src="BrowSel-config.png" width="33%" alt="BrowSel's Settings dialog with browser selection and language options">
+  <img src="docs/BrowSel-config.png" width="33%" alt="BrowSel's Settings dialog with browser selection and language options">
   <br>About dialog<br>
-  <img src="BrowSel-about.png" width="33%" alt="BrowSel's About dialog showing the app icon, version, and credits">
+  <img src="docs/BrowSel-about.png" width="33%" alt="BrowSel's About dialog showing the app icon, version, and credits">
 </p>
 
 ## Features

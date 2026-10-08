@@ -12,8 +12,8 @@ static class Program
     const int IdYes = 6;
 
     // The window that owns the message boxes. Without an owner they open behind the app and look like
-// nothing happened.
-internal static IntPtr Owner;
+    // nothing happened.
+    internal static IntPtr Owner;
 
     internal static void Msg(string text, string title = "BrowSel") =>
         MessageBoxW(Owner, text, title, MbIconInformation);

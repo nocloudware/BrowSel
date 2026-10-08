@@ -76,7 +76,7 @@ public sealed partial class MainWindow : Window
     {
         ("Microsoft.WindowsAppSDK", "https://github.com/microsoft/WindowsAppSDK/blob/main/LICENSE"),
         ("Microsoft.Windows.SDK.BuildTools", "https://github.com/microsoft/WindowsAppSDK-Samples/blob/main/LICENSE"),
-        ("System.Management", "https://github.com/dotnet/dotnet/blob/main/LICENSE.TXT"),
+        ("System.Management", "https://github.com/dotnet/runtime/blob/main/LICENSE.TXT"),
     };
 
     // The credits, built from code so every word goes through the translator.
@@ -183,14 +183,14 @@ public sealed partial class MainWindow : Window
             try { list = Discover.Load(b, detect: false); } catch { list = new(); } // one broken browser must not take the picker down
 
             var row = new Row { Name = b.Name, Expanded = _cfg.Expanded.Contains(b.Name) };
-        foreach (var e in list.OrderBy(x => x.Label))
-        {
-            total++;
-            row.Kids.Add(new Row { Entry = e });
-        }
+            foreach (var e in list.OrderBy(x => x.Label))
+            {
+                total++;
+                row.Kids.Add(new Row { Entry = e });
+            }
 
-        _rows.Add(row);
-    }
+            _rows.Add(row);
+        }
 
         // Two standing options at the end: open the link in the editor, or just copy it.
         _rows.Add(new Row { Action = "editor" });
@@ -331,7 +331,7 @@ public sealed partial class MainWindow : Window
         };
         var txt = new TextBlock { Text = e.Label, VerticalAlignment = VerticalAlignment.Center };
         // Deeper than the browser rows (which start their name at 48) so the hierarchy reads at a glance.
-var leaf = new Grid { ColumnSpacing = 10, Margin = new Thickness(38, 0, 0, 0),
+        var leaf = new Grid { ColumnSpacing = 10, Margin = new Thickness(38, 0, 0, 0),
             ColumnDefinitions = { new ColumnDefinition { Width = new GridLength(8) }, new ColumnDefinition() } };
         Grid.SetColumn(txt, 1);
         leaf.Children.Add(dot);

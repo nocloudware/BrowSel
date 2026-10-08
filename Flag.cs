@@ -4,10 +4,10 @@ using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Imaging;
 
 // Flags as images. Windows does NOT draw flag emoji: it shows them as the pair of
-// letters ("ES", "GB"), so the PNGs are downloaded once and read from the app folder.
+// letters ("ES", "GB"), so the PNGs ship in Assets/ and are read from the app folder.
 static class Flag
 {
-    // codigo de idioma -> codigo de pais
+    // language code -> country code
     static readonly Dictionary<string, string> Cc = new()
     {
         ["en"] = "gb", ["es"] = "es", ["fr"] = "fr", ["ru"] = "ru", ["zh"] = "cn",
