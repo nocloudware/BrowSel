@@ -33,25 +33,30 @@ Requires Windows 10 2004+ (19041) or Windows 11. On Windows 10, Mica backdrop fa
 
 ## Build
 
-Requires the .NET 10 SDK.
+Requires the .NET 10 SDK and [Inno Setup 6](https://jrsoftware.org/isdl.php).
 
 ```
-dotnet publish BrowSel.csproj -c Release -p:Platform=x64 -r win-x64 --self-contained true -o out
+./build.ps1
 ```
 
-The program lands in `out\`. It carries the Windows App SDK with it, so it needs nothing else
-installed. To build the installer as well, install [Inno Setup 6](https://jrsoftware.org/isdl.php)
-and run:
+The version lives only in `<Version>` of `BrowSel.csproj`. The script publishes the app, compiles
+the installer with that version and writes `dist\BrowSelSetup-<version>.exe` plus its
+`BrowSelSetup-<version>.exe.sha256` (the in-app updater refuses a release without that hash).
+Building manually? Use:
 
 ```
-"C:\Program Files\Inno Setup 6\ISCC.exe" installer\BrowSel.iss
+dotnet publish BrowSel.csproj -c Release -p:Platform=x64 -r win-x64 --self-contained true -o out-rel
 ```
 
-That produces `dist\BrowSelSetup-<version>.exe`.
+and point ISCC (usually under `C:\Program Files (x86)\Inno Setup 6\`) at `installer\BrowSel.iss`.
+
+To publish a release: bump `<Version>` in `BrowSel.csproj`, commit, then
+`git tag vX.Y.Z && git push --tags` — the release workflow builds and uploads the installer and
+its hash.
 
 ## Install
 
-Download `BrowSelSetup-1.1.8.exe` from the releases page and run it. It installs into
+Download the latest `BrowSelSetup-*.exe` from the releases page and run it. It installs into
 `%LocalAppData%\Programs\BrowSel`, adds a Start menu entry and an entry in
 *Apps installed by Windows*, and registers BrowSel as a link handler.
 
@@ -100,8 +105,9 @@ would see there.
 - Windows 10 2004+ (19041) or Windows 11. On Windows 10, Mica backdrop falls back to solid color.
 - Open-profile detection is a heuristic, not official API. It can miss a profile, or report one as
   open after it closed.
-- Auto-update needs a GitHub release to exist. With none published, it always reports that you
-  are up to date.
+- Auto-update needs a GitHub release carrying the installer **and** its hash
+  (`BrowSelSetup-*.exe.sha256` or GitHub's `digest`). With no hash published, or with none of the
+  two files, it always reports that you are up to date.
 
 ## License
 
