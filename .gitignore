@@ -23,3 +23,5 @@ Generated Files/
 *.user
 *.suo
 *.pdb
+# Working document, not part of the shipped product
+BrowSel *Plan de correcciones*.md
