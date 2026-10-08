@@ -166,7 +166,7 @@ static class Discover
         {
             // A copy, so a running Firefox cannot block the read and a write ahead log left
             // pending by a crash still gets replayed against it.
-            var tmp = Path.Combine(Path.GetTempPath(), "BrowSel-" + Path.GetFileName(db));
+            var tmp = Path.Combine(Path.GetTempPath(), "BrowSel-" + Guid.NewGuid().ToString("N") + ".sqlite");
             try
             {
                 File.Copy(db, tmp, true);
