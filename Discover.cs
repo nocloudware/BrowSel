@@ -30,6 +30,7 @@ static class Discover
         Chromium("Brave", "Brave", @"BraveSoftware\Brave-Browser", "brave.exe"),
         Chromium("Chrome", "Google Chrome", @"Google\Chrome", "chrome.exe"),
         Chromium("Edge", "Microsoft Edge", @"Microsoft\Edge", "msedge.exe"),
+        Chromium("Vivaldi", "Vivaldi", "Vivaldi", "vivaldi.exe"),
         new("Opera", "Opera", Kind.Chromium, "opera.exe",
             new[] { Path.Combine(Local, @"Programs\Opera\opera.exe"), Path.Combine(PF, @"Opera\opera.exe") },
             Path.Combine(Roaming, @"Opera Software\Opera Stable\Local State")),

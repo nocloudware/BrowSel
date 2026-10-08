@@ -91,7 +91,7 @@ The gear in the top right corner opens Settings:
 ## How it works
 
 Profiles come from each browser's own configuration: the `Local State` and profile directories
-for Chromium-based browsers (Brave, Chrome, Edge, Opera), and `profiles.ini` for Firefox.
+for Chromium-based browsers (Brave, Chrome, Edge, Opera, Vivaldi), and `profiles.ini` for Firefox.
 
 A profile counts as open when its lock file is held, when a running process points at it, or when
 its window title matches it. Windows exposes no reliable API for this, so it is a best effort: if
