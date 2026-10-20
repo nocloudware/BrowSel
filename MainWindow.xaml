@@ -36,6 +36,7 @@
                        TextWrapping="Wrap" />
             <TextBlock x:Name="txtUrl" Style="{StaticResource CaptionTextBlockStyle}"
                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                       TextWrapping="NoWrap" MaxLines="1"
                        TextTrimming="CharacterEllipsis" />
         </StackPanel>
 
