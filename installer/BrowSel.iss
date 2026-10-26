@@ -56,11 +56,32 @@ Root: HKCU; Subkey: "Software\Classes\BrowSelURL"; ValueType: string; ValueName:
 Root: HKCU; Subkey: "Software\Classes\BrowSelURL"; ValueType: string; ValueName: "URL Protocol"; ValueData: ""; Flags: uninsdeletekey
 Root: HKCU; Subkey: "Software\Classes\BrowSelURL\DefaultIcon"; ValueType: string; ValueName: ""; ValueData: "{app}\{#AppExeName},0"; Flags: uninsdeletekey
 Root: HKCU; Subkey: "Software\Classes\BrowSelURL\shell\open\command"; ValueType: string; ValueName: ""; ValueData: """{app}\{#AppExeName}"" ""%1"""; Flags: uninsdeletekey
+; Web page document handlers. Same keys the app writes itself.
+Root: HKCU; Subkey: "Software\Classes\BrowSelHTML"; ValueType: string; ValueName: ""; ValueData: "BrowSel HTML Document"; Flags: uninsdeletekey
+Root: HKCU; Subkey: "Software\Classes\BrowSelHTML\DefaultIcon"; ValueType: string; ValueName: ""; ValueData: "{app}\{#AppExeName},0"; Flags: uninsdeletekey
+Root: HKCU; Subkey: "Software\Classes\BrowSelHTML\shell\open\command"; ValueType: string; ValueName: ""; ValueData: """{app}\{#AppExeName}"" ""%1"""; Flags: uninsdeletekey
+Root: HKCU; Subkey: "Software\Classes\BrowSelMHTML"; ValueType: string; ValueName: ""; ValueData: "BrowSel MHTML Document"; Flags: uninsdeletekey
+Root: HKCU; Subkey: "Software\Classes\BrowSelMHTML\DefaultIcon"; ValueType: string; ValueName: ""; ValueData: "{app}\{#AppExeName},0"; Flags: uninsdeletekey
+Root: HKCU; Subkey: "Software\Classes\BrowSelMHTML\shell\open\command"; ValueType: string; ValueName: ""; ValueData: """{app}\{#AppExeName}"" ""%1"""; Flags: uninsdeletekey
 Root: HKCU; Subkey: "Software\BrowSel\Capabilities"; ValueType: string; ValueName: "ApplicationName"; ValueData: "{#AppName}"
 Root: HKCU; Subkey: "Software\BrowSel\Capabilities"; ValueType: string; ValueName: "ApplicationDescription"; ValueData: "Pick the browser and profile for each link"
 Root: HKCU; Subkey: "Software\BrowSel\Capabilities"; ValueType: string; ValueName: "AppPath"; ValueData: "{app}\{#AppExeName}"
+Root: HKCU; Subkey: "Software\BrowSel\Capabilities\FileAssociations"; ValueType: string; ValueName: ".htm"; ValueData: "BrowSelHTML"
+Root: HKCU; Subkey: "Software\BrowSel\Capabilities\FileAssociations"; ValueType: string; ValueName: ".html"; ValueData: "BrowSelHTML"
+Root: HKCU; Subkey: "Software\BrowSel\Capabilities\FileAssociations"; ValueType: string; ValueName: ".shtml"; ValueData: "BrowSelHTML"
+Root: HKCU; Subkey: "Software\BrowSel\Capabilities\FileAssociations"; ValueType: string; ValueName: ".xht"; ValueData: "BrowSelHTML"
+Root: HKCU; Subkey: "Software\BrowSel\Capabilities\FileAssociations"; ValueType: string; ValueName: ".xhtml"; ValueData: "BrowSelHTML"
+Root: HKCU; Subkey: "Software\BrowSel\Capabilities\FileAssociations"; ValueType: string; ValueName: ".mht"; ValueData: "BrowSelMHTML"
+Root: HKCU; Subkey: "Software\BrowSel\Capabilities\FileAssociations"; ValueType: string; ValueName: ".mhtml"; ValueData: "BrowSelMHTML"
 Root: HKCU; Subkey: "Software\BrowSel\Capabilities\URLAssociations"; ValueType: string; ValueName: "http"; ValueData: "BrowSelURL"
 Root: HKCU; Subkey: "Software\BrowSel\Capabilities\URLAssociations"; ValueType: string; ValueName: "https"; ValueData: "BrowSelURL"
+Root: HKCU; Subkey: "Software\Classes\.htm\OpenWithProgids"; ValueType: string; ValueName: "BrowSelHTML"; ValueData: ""; Flags: uninsdeletevalue
+Root: HKCU; Subkey: "Software\Classes\.html\OpenWithProgids"; ValueType: string; ValueName: "BrowSelHTML"; ValueData: ""; Flags: uninsdeletevalue
+Root: HKCU; Subkey: "Software\Classes\.shtml\OpenWithProgids"; ValueType: string; ValueName: "BrowSelHTML"; ValueData: ""; Flags: uninsdeletevalue
+Root: HKCU; Subkey: "Software\Classes\.xht\OpenWithProgids"; ValueType: string; ValueName: "BrowSelHTML"; ValueData: ""; Flags: uninsdeletevalue
+Root: HKCU; Subkey: "Software\Classes\.xhtml\OpenWithProgids"; ValueType: string; ValueName: "BrowSelHTML"; ValueData: ""; Flags: uninsdeletevalue
+Root: HKCU; Subkey: "Software\Classes\.mht\OpenWithProgids"; ValueType: string; ValueName: "BrowSelMHTML"; ValueData: ""; Flags: uninsdeletevalue
+Root: HKCU; Subkey: "Software\Classes\.mhtml\OpenWithProgids"; ValueType: string; ValueName: "BrowSelMHTML"; ValueData: ""; Flags: uninsdeletevalue
 Root: HKCU; Subkey: "Software\RegisteredApplications"; ValueType: string; ValueName: "{#AppName}"; ValueData: "Software\BrowSel\Capabilities"; Flags: uninsdeletevalue
 ; Removes the whole BrowSel key on uninstall, settings included, same as the app's --unregister.
 ; Without this the empty capability keys stay behind and Windows keeps offering BrowSel as a
@@ -70,4 +91,4 @@ Root: HKCU; Subkey: "Software\BrowSel"; Flags: uninsdeletekey
 [Run]
 ; The app registers itself again and opens the Windows page where the default is chosen. Being the
 ; default is never automatic on Windows, it always has to be confirmed there.
-Filename: "{app}\{#AppExeName}"; Parameters: "--register"; Flags: postinstall skipifsilent; Description: "Open Windows Settings to make BrowSel the default browser"
+Filename: "{app}\{#AppExeName}"; Parameters: "--register"; Flags: postinstall skipifsilent; Description: "Open Windows Settings to choose BrowSel for links and web page files"
