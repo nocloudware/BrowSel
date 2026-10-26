@@ -39,17 +39,11 @@ static class Program
         if (args[0] == "--register") { Register(); return; }
         if (args[0] == "--unregister") { Unregister(); return; }
 
-        // Windows may pass the whole URI ("BrowSelURL:https://...") or just the URL
-        var url = args[0];
-        var colon = url.IndexOf(':');
-        if (colon >= 0 && !url.StartsWith("http", StringComparison.OrdinalIgnoreCase))
-            url = url[(colon + 1)..];
+        // Windows may pass "BrowSelURL:<uri>", a plain URL, a file: URI, or a local path.
+        var target = Target.FromArgument(args[0]);
+        if (target is null) return;
 
-        // http/https only: stops an argument from being read as a browser option
-        if (!url.StartsWith("http://", StringComparison.OrdinalIgnoreCase) &&
-            !url.StartsWith("https://", StringComparison.OrdinalIgnoreCase)) return;
-
-        Url = url;
+        Url = target;
         Update.CleanTemp();
         Editors.CleanTemp();
         WinRT.ComWrappersSupport.InitializeComWrappers();
