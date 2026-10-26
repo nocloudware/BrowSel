@@ -1,10 +1,11 @@
 # BrowSel
 
-Pick which browser and which profile opens a link.
+Pick which browser and which profile opens a link or a saved web page.
 
 Windows can only send a link to one program. BrowSel registers itself as the handler for
-`http`/`https` links and, when you click one, it shows your browsers and their profiles — with
-the ones already running marked — so you pick where the link goes.
+`http`/`https` links and for saved web page files (`.htm`, `.html`, `.shtml`, `.xht`, `.xhtml`,
+`.mht`, `.mhtml`). When you open one, it shows your browsers and their profiles — with the ones
+already running marked — so you pick where it goes.
 
 Requires Windows 10 2004+ (19041) or Windows 11. On Windows 10, Mica backdrop falls back to solid color.
 
@@ -22,12 +23,14 @@ Requires Windows 10 2004+ (19041) or Windows 11. On Windows 10, Mica backdrop fa
 ## Features
 
 - **Browser + profile picker.** Every installed browser, every profile it has.
+- **Links and web page files.** Handles `http`/`https` links and saved web pages such as
+  `.html` and `.mhtml`.
 - **Already-open profiles are marked**, so you can tell at a glance what is running.
 - **Ten languages.** English, Spanish, French, Russian, Chinese, Japanese, Portuguese, Hindi,
   Arabic and Bengali. It follows the operating system; you can override it in Settings.
-- **Open in your editor.** Drops the link as text into the editor you pick, using the same
-  editor Windows uses for text files.
-- **Copy.** Puts the link on the clipboard and closes.
+- **Open in your editor.** Drops the link or file path as text into the editor you pick, using the
+  same editor Windows uses for text files.
+- **Copy.** Puts the link or file path on the clipboard and closes.
 - **Check for updates** from inside the app.
 - Light and dark, following the system.
 
@@ -58,19 +61,23 @@ its hash.
 
 Download the latest `BrowSelSetup-*.exe` from the releases page and run it. It installs into
 `%LocalAppData%\Programs\BrowSel`, adds a Start menu entry and an entry in
-*Apps installed by Windows*, and registers BrowSel as a link handler.
+*Apps installed by Windows*, and registers BrowSel as a handler for links and web page files.
 
 Then:
 
 1. Open **Settings > Apps > Default apps** and find **BrowSel**.
-2. Set it as the handler for both **HTTP** and **HTTPS**. Windows will not let any program choose
-   this for you; you have to confirm it once. The installer offers to open that page for you.
-3. Click any link on the web. BrowSel opens.
+2. Set it as the handler for **HTTP**, **HTTPS**, and the web page file types you want (for
+   example **.html** and **.mhtml**). Windows will not let any program choose this for you;
+   you have to confirm it once. The installer offers to open that page for you.
+3. Click any link, or open a saved web page, and BrowSel opens.
+
+BrowSel only appears for the types it registers. Windows keeps the final say on which app opens
+a file; choosing BrowSel in Settings is what makes it the default.
 
 To remove it, uninstall it from *Apps installed by Windows*. That also removes your settings.
 Running `BrowSel.exe --unregister` does the same from the command line, for a portable copy.
 
-If it was still the default handler, Windows will ask you to pick another browser.
+If it was still the default handler, Windows will ask you to pick another app.
 
 ## Settings
 
@@ -108,6 +115,9 @@ would see there.
 - Auto-update needs a GitHub release carrying the installer **and** its hash
   (`BrowSelSetup-*.exe.sha256` or GitHub's `digest`). With no hash published, or with none of the
   two files, it always reports that you are up to date.
+- Only web page documents are registered as file types. PDFs, images and other formats keep
+  their current apps.
+- Opening several files at once opens only the first one.
 
 ## License
 
