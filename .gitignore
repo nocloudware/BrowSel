@@ -25,3 +25,6 @@ Generated Files/
 *.pdb
 # Working document, not part of the shipped product
 BrowSel *Plan de correcciones*.md
+
+# Design docs, specs and plans (not committed)
+spec/
