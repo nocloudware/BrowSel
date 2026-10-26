@@ -57,6 +57,28 @@ static class Program
 
     internal static string Url = "";
 
+    // Web page documents BrowSel can open. Keep in sync with installer\BrowSel.iss.
+    static readonly (string Ext, string Prog)[] FileTypes =
+    {
+        (".htm", "BrowSelHTML"),
+        (".html", "BrowSelHTML"),
+        (".shtml", "BrowSelHTML"),
+        (".xht", "BrowSelHTML"),
+        (".xhtml", "BrowSelHTML"),
+        (".mht", "BrowSelMHTML"),
+        (".mhtml", "BrowSelMHTML"),
+    };
+
+    static void RegisterProgId(string progId, string defaultValue, string exe, bool urlProtocol = false)
+    {
+        using var k = Registry.CurrentUser.CreateSubKey($@"Software\Classes\{progId}");
+        k.SetValue("", defaultValue);
+        if (urlProtocol) k.SetValue("URL Protocol", "");
+        using (var i = k.CreateSubKey("DefaultIcon")) i.SetValue("", $"\"{exe}\",0");
+        using var c = k.CreateSubKey(@"shell\open\command");
+        c.SetValue("", $"\"{exe}\" \"%1\"");
+    }
+
     // ---------- Protocol registration / unregistration ----------
 
     static void Register()
@@ -74,22 +96,25 @@ static class Program
         }
         const string prog = "BrowSelURL", app = @"Software\BrowSel";
 
-        using (var k = Registry.CurrentUser.CreateSubKey($@"Software\Classes\{prog}"))
-        {
-            k.SetValue("", "URL:BrowSelURL");
-            k.SetValue("URL Protocol", "");
-            using (var i = k.CreateSubKey("DefaultIcon")) i.SetValue("", $"\"{exe}\",0");
-            using var c = k.CreateSubKey(@"shell\open\command");
-            c.SetValue("", $"\"{exe}\" \"%1\"");
-        }
+        RegisterProgId(prog, "URL:BrowSelURL", exe, urlProtocol: true);
+        RegisterProgId("BrowSelHTML", "BrowSel HTML Document", exe);
+        RegisterProgId("BrowSelMHTML", "BrowSel MHTML Document", exe);
         using (var k = Registry.CurrentUser.CreateSubKey($@"{app}\Capabilities"))
         {
             k.SetValue("ApplicationName", "BrowSel");
             k.SetValue("ApplicationDescription", S.T("appDescription"));
             k.SetValue("AppPath", exe);
+            using (var f = k.CreateSubKey("FileAssociations"))
+                foreach (var (ext, progId) in FileTypes)
+                    f.SetValue(ext, progId);
             using var u = k.CreateSubKey("URLAssociations");
             u.SetValue("http", prog);
             u.SetValue("https", prog);
+        }
+        foreach (var (ext, progId) in FileTypes)
+        {
+            using var k = Registry.CurrentUser.CreateSubKey($@"Software\Classes\{ext}\OpenWithProgids");
+            k.SetValue(progId, "", RegistryValueKind.String);
         }
         using (var k = Registry.CurrentUser.CreateSubKey(@"Software\RegisteredApplications"))
             k.SetValue("BrowSel", $@"{app}\Capabilities");
@@ -101,7 +126,14 @@ static class Program
     static void Unregister()
     {
         Registry.CurrentUser.DeleteSubKeyTree(@"Software\Classes\BrowSelURL", false);
+        Registry.CurrentUser.DeleteSubKeyTree(@"Software\Classes\BrowSelHTML", false);
+        Registry.CurrentUser.DeleteSubKeyTree(@"Software\Classes\BrowSelMHTML", false);
         Registry.CurrentUser.DeleteSubKeyTree(@"Software\BrowSel", false);
+
+        foreach (var (ext, progId) in FileTypes)
+            using (var k = Registry.CurrentUser.OpenSubKey($@"Software\Classes\{ext}\OpenWithProgids", true))
+                k?.DeleteValue(progId, false);
+
         using (var k = Registry.CurrentUser.OpenSubKey(@"Software\RegisteredApplications", true))
             k?.DeleteValue("BrowSel", false);
         Msg(S.T("unregistered"));
