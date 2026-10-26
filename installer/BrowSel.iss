@@ -7,7 +7,7 @@
 
 #define AppName "BrowSel"
 #ifndef AppVersion
-  #define AppVersion "1.2.1"
+  #define AppVersion "1.3.0"
 #endif
 #define AppExeName "BrowSel.exe"
 
